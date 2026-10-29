@@ -37,6 +37,10 @@ if archivo_subido:
             col3.metric("Filas Vacías Eliminadas", f"-{stats['filas_vacias_eliminadas']}")
             
             st.markdown(f"**Resultado:** Tu archivo pasó de {stats['filas_originales']} a **{stats['filas_finales']} filas útiles**.")
+
+            # Nuevo: Notificación si se normalizaron RUTs
+            if stats.get("columnas_rut_normalizadas", 0) > 0:
+                st.info(f"🇨🇱 Se detectaron y normalizaron **{stats['columnas_rut_normalizadas']} columna(s) de RUT** (formato unificado a XXXXXXXX-X).")
             
             # Vista previa colapsable
             with st.expander("Ver vista previa de los datos limpios"):
@@ -56,8 +60,6 @@ if archivo_subido:
             )
             
         except (ValueError, RuntimeError) as e:
-            # Capturamos los errores específicos de formato o estructura que definimos en el motor
             st.warning(f"Aviso sobre tus datos: {e!s}")
         except Exception as e:  # noqa: BLE001
-            # Bloque de seguridad final por si ocurre un fallo no documentado (silenciando la advertencia del linter)
             st.error(f"Error inesperado del sistema: {e!s}")
