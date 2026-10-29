@@ -1,0 +1,390 @@
+2026-10-29 18:44:41,470 - [INFO] - === Nueva solicitud: pc-gamer-mari.xlsx ===
+2026-10-29 18:44:41,869 - [INFO] - Iniciando motor de limpieza de datos...
+2026-10-29 18:44:41,876 - [INFO] - Vaciado: 0 filas y 0 columnas eliminadas.
+2026-10-29 18:44:41,902 - [ERROR] - Fallo crítico en el motor de limpieza.
+Traceback (most recent call last):
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 74, in limpiar_dataframe
+    df_cleaned[cols_texto] = df_cleaned[cols_texto].replace(
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        regex={r'^(?i)(nan|null|none|)$': pd.NA}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8089, in replace
+    return self.replace(to_replace, value, inplace=inplace, regex=regex)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8140, in replace
+    new_data = self._mgr.replace_list(
+        src_list=to_replace,
+    ...<2 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 541, in replace_list
+    bm = self.apply(
+        "replace_list",
+    ...<3 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 456, in apply
+    applied = getattr(b, f)(**kwargs)
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 867, in replace_list
+    for i, ((src, dest), mask) in enumerate(zip(pairs, masks, strict=True)):
+                                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 851, in <genexpr>
+    compare_or_regex_search(values, s[0], regex=regex, mask=na_mask),
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 85, in compare_or_regex_search
+    if not regex or not should_use_regex(regex, b):
+                        ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 39, in should_use_regex
+    regex = regex and is_re_compilable(to_replace)
+                      ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\dtypes\inference.py", line 219, in is_re_compilable
+    re.compile(obj)  # type: ignore[call-overload]
+    ~~~~~~~~~~^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 289, in compile
+    return _compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_compiler.py", line 762, in compile
+    p = _parser.parse(p, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 973, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 460, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       not nested and not items))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 834, in _parse
+    raise source.error('global flags not at the start '
+                       'of the expression',
+                       source.tell() - start)
+re.PatternError: global flags not at the start of the expression at position 1
+2026-10-29 18:44:42,005 - [ERROR] - Error inesperado al leer el archivo.
+Traceback (most recent call last):
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 74, in limpiar_dataframe
+    df_cleaned[cols_texto] = df_cleaned[cols_texto].replace(
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        regex={r'^(?i)(nan|null|none|)$': pd.NA}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8089, in replace
+    return self.replace(to_replace, value, inplace=inplace, regex=regex)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8140, in replace
+    new_data = self._mgr.replace_list(
+        src_list=to_replace,
+    ...<2 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 541, in replace_list
+    bm = self.apply(
+        "replace_list",
+    ...<3 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 456, in apply
+    applied = getattr(b, f)(**kwargs)
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 867, in replace_list
+    for i, ((src, dest), mask) in enumerate(zip(pairs, masks, strict=True)):
+                                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 851, in <genexpr>
+    compare_or_regex_search(values, s[0], regex=regex, mask=na_mask),
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 85, in compare_or_regex_search
+    if not regex or not should_use_regex(regex, b):
+                        ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 39, in should_use_regex
+    regex = regex and is_re_compilable(to_replace)
+                      ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\dtypes\inference.py", line 219, in is_re_compilable
+    re.compile(obj)  # type: ignore[call-overload]
+    ~~~~~~~~~~^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 289, in compile
+    return _compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_compiler.py", line 762, in compile
+    p = _parser.parse(p, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 973, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 460, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       not nested and not items))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 834, in _parse
+    raise source.error('global flags not at the start '
+                       'of the expression',
+                       source.tell() - start)
+re.PatternError: global flags not at the start of the expression at position 1
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 127, in procesar_archivo
+    return limpiar_dataframe(df)
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 101, in limpiar_dataframe
+    raise RuntimeError(f"Error al limpiar los datos: {e!s}") from e
+RuntimeError: Error al limpiar los datos: global flags not at the start of the expression at position 1
+2026-10-29 18:44:53,589 - [INFO] - === Nueva solicitud: IFG_TARIFAS_IGNACIO_ANTONIO_JESUS_ROSAS_SANHUEZA.xlsx ===
+2026-10-29 18:44:53,705 - [INFO] - Iniciando motor de limpieza de datos...
+2026-10-29 18:44:53,707 - [INFO] - Vaciado: 0 filas y 0 columnas eliminadas.
+2026-10-29 18:44:53,719 - [ERROR] - Fallo crítico en el motor de limpieza.
+Traceback (most recent call last):
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 74, in limpiar_dataframe
+    df_cleaned[cols_texto] = df_cleaned[cols_texto].replace(
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        regex={r'^(?i)(nan|null|none|)$': pd.NA}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8089, in replace
+    return self.replace(to_replace, value, inplace=inplace, regex=regex)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8140, in replace
+    new_data = self._mgr.replace_list(
+        src_list=to_replace,
+    ...<2 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 541, in replace_list
+    bm = self.apply(
+        "replace_list",
+    ...<3 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 456, in apply
+    applied = getattr(b, f)(**kwargs)
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 867, in replace_list
+    for i, ((src, dest), mask) in enumerate(zip(pairs, masks, strict=True)):
+                                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 851, in <genexpr>
+    compare_or_regex_search(values, s[0], regex=regex, mask=na_mask),
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 85, in compare_or_regex_search
+    if not regex or not should_use_regex(regex, b):
+                        ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 39, in should_use_regex
+    regex = regex and is_re_compilable(to_replace)
+                      ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\dtypes\inference.py", line 219, in is_re_compilable
+    re.compile(obj)  # type: ignore[call-overload]
+    ~~~~~~~~~~^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 289, in compile
+    return _compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_compiler.py", line 762, in compile
+    p = _parser.parse(p, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 973, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 460, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       not nested and not items))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 834, in _parse
+    raise source.error('global flags not at the start '
+                       'of the expression',
+                       source.tell() - start)
+re.PatternError: global flags not at the start of the expression at position 1
+2026-10-29 18:44:53,721 - [ERROR] - Error inesperado al leer el archivo.
+Traceback (most recent call last):
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 74, in limpiar_dataframe
+    df_cleaned[cols_texto] = df_cleaned[cols_texto].replace(
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        regex={r'^(?i)(nan|null|none|)$': pd.NA}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8089, in replace
+    return self.replace(to_replace, value, inplace=inplace, regex=regex)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8140, in replace
+    new_data = self._mgr.replace_list(
+        src_list=to_replace,
+    ...<2 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 541, in replace_list
+    bm = self.apply(
+        "replace_list",
+    ...<3 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 456, in apply
+    applied = getattr(b, f)(**kwargs)
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 867, in replace_list
+    for i, ((src, dest), mask) in enumerate(zip(pairs, masks, strict=True)):
+                                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 851, in <genexpr>
+    compare_or_regex_search(values, s[0], regex=regex, mask=na_mask),
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 85, in compare_or_regex_search
+    if not regex or not should_use_regex(regex, b):
+                        ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 39, in should_use_regex
+    regex = regex and is_re_compilable(to_replace)
+                      ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\dtypes\inference.py", line 219, in is_re_compilable
+    re.compile(obj)  # type: ignore[call-overload]
+    ~~~~~~~~~~^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 289, in compile
+    return _compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_compiler.py", line 762, in compile
+    p = _parser.parse(p, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 973, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 460, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       not nested and not items))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 834, in _parse
+    raise source.error('global flags not at the start '
+                       'of the expression',
+                       source.tell() - start)
+re.PatternError: global flags not at the start of the expression at position 1
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 127, in procesar_archivo
+    return limpiar_dataframe(df)
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 101, in limpiar_dataframe
+    raise RuntimeError(f"Error al limpiar los datos: {e!s}") from e
+RuntimeError: Error al limpiar los datos: global flags not at the start of the expression at position 1
+2026-10-29 18:45:31,585 - [INFO] - === Nueva solicitud: excel finanzas.xlsx ===
+2026-10-29 18:45:31,594 - [INFO] - Iniciando motor de limpieza de datos...
+2026-10-29 18:45:31,598 - [INFO] - Vaciado: 3 filas y 0 columnas eliminadas.
+2026-10-29 18:45:31,602 - [ERROR] - Fallo crítico en el motor de limpieza.
+Traceback (most recent call last):
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 74, in limpiar_dataframe
+    df_cleaned[cols_texto] = df_cleaned[cols_texto].replace(
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        regex={r'^(?i)(nan|null|none|)$': pd.NA}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8089, in replace
+    return self.replace(to_replace, value, inplace=inplace, regex=regex)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8140, in replace
+    new_data = self._mgr.replace_list(
+        src_list=to_replace,
+    ...<2 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 541, in replace_list
+    bm = self.apply(
+        "replace_list",
+    ...<3 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 456, in apply
+    applied = getattr(b, f)(**kwargs)
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 867, in replace_list
+    for i, ((src, dest), mask) in enumerate(zip(pairs, masks, strict=True)):
+                                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 851, in <genexpr>
+    compare_or_regex_search(values, s[0], regex=regex, mask=na_mask),
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 85, in compare_or_regex_search
+    if not regex or not should_use_regex(regex, b):
+                        ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 39, in should_use_regex
+    regex = regex and is_re_compilable(to_replace)
+                      ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\dtypes\inference.py", line 219, in is_re_compilable
+    re.compile(obj)  # type: ignore[call-overload]
+    ~~~~~~~~~~^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 289, in compile
+    return _compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_compiler.py", line 762, in compile
+    p = _parser.parse(p, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 973, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 460, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       not nested and not items))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 834, in _parse
+    raise source.error('global flags not at the start '
+                       'of the expression',
+                       source.tell() - start)
+re.PatternError: global flags not at the start of the expression at position 1
+2026-10-29 18:45:31,607 - [ERROR] - Error inesperado al leer el archivo.
+Traceback (most recent call last):
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 74, in limpiar_dataframe
+    df_cleaned[cols_texto] = df_cleaned[cols_texto].replace(
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        regex={r'^(?i)(nan|null|none|)$': pd.NA}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8089, in replace
+    return self.replace(to_replace, value, inplace=inplace, regex=regex)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\generic.py", line 8140, in replace
+    new_data = self._mgr.replace_list(
+        src_list=to_replace,
+    ...<2 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 541, in replace_list
+    bm = self.apply(
+        "replace_list",
+    ...<3 lines>...
+        regex=regex,
+    )
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\managers.py", line 456, in apply
+    applied = getattr(b, f)(**kwargs)
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 867, in replace_list
+    for i, ((src, dest), mask) in enumerate(zip(pairs, masks, strict=True)):
+                                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\internals\blocks.py", line 851, in <genexpr>
+    compare_or_regex_search(values, s[0], regex=regex, mask=na_mask),
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 85, in compare_or_regex_search
+    if not regex or not should_use_regex(regex, b):
+                        ~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\array_algos\replace.py", line 39, in should_use_regex
+    regex = regex and is_re_compilable(to_replace)
+                      ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\limpiador-excel-pymes\venv\Lib\site-packages\pandas\core\dtypes\inference.py", line 219, in is_re_compilable
+    re.compile(obj)  # type: ignore[call-overload]
+    ~~~~~~~~~~^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 289, in compile
+    return _compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_compiler.py", line 762, in compile
+    p = _parser.parse(p, flags)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 973, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 460, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       not nested and not items))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\erti_\AppData\Local\Programs\Python\Python314\Lib\re\_parser.py", line 834, in _parse
+    raise source.error('global flags not at the start '
+                       'of the expression',
+                       source.tell() - start)
+re.PatternError: global flags not at the start of the expression at position 1
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 127, in procesar_archivo
+    return limpiar_dataframe(df)
+  File "C:\limpiador-excel-pymes\motor_limpieza.py", line 101, in limpiar_dataframe
+    raise RuntimeError(f"Error al limpiar los datos: {e!s}") from e
+RuntimeError: Error al limpiar los datos: global flags not at the start of the expression at position 1
