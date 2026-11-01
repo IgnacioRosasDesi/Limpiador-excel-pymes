@@ -60,7 +60,7 @@ db = firestore.client()
 try:
     FIREBASE_WEB_API_KEY = st.secrets["FIREBASE_WEB_API_KEY"]
 except Exception:  # noqa: BLE001
-    FIREBASE_WEB_API_KEY = "TU_API_KEY_AQUI"
+    FIREBASE_WEB_API_KEY = "AIzaSyDMWU7kE5BXN8qrhUZD2mZgwkbNN4l6DFw"
 
 def registrar_usuario(email, password):
     """Crea una cuenta nueva en Firebase Auth."""
