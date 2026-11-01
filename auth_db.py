@@ -1,17 +1,27 @@
 import firebase_admin
 import requests
+import streamlit as st
 from firebase_admin import credentials, firestore
 
-# 1. Configuración de Firebase Admin (Para interactuar con Firestore)
+# 1. Configuración de Firebase Admin usando Secrets de Streamlit o archivo local
 if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase_key.json")
+    try:
+        # Intentamos leer desde los Secrets configurados en Streamlit Cloud
+        secret_dict = dict(st.secrets["firebase"])
+        cred = credentials.Certificate(secret_dict)
+    except Exception:  # noqa: BLE001
+        # Si estamos en local y no hay secrets configurados, usamos el archivo físico
+        cred = credentials.Certificate("firebase_key.json")
+    
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-# 2. Configuración de Firebase REST API (Para el Login/Registro)
-# REEMPLAZA ESTO CON TU WEB API KEY DE FIREBASE
-FIREBASE_WEB_API_KEY = "AIzaSyDMWU7kE5BXN8qrhUZD2mZgwkbNN4l6DFw"
+# 2. Configuración de Firebase REST API (Login/Registro)
+try:
+    FIREBASE_WEB_API_KEY = st.secrets["FIREBASE_WEB_API_KEY"]
+except Exception:  # noqa: BLE001
+    FIREBASE_WEB_API_KEY = "TU_API_KEY_AQUI"
 
 def registrar_usuario(email, password):
     """Crea una cuenta nueva en Firebase Auth."""
