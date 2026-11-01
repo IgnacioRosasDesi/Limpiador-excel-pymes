@@ -1,19 +1,33 @@
 import json
+import re
 import firebase_admin
 from firebase_admin import credentials, firestore
 import requests
 import streamlit as st
 
+
 def _normalizar_llave_privada(pk: str) -> str:
-    """Normaliza y repara los saltos de línea de la llave privada PEM de Firebase."""
+    """Extrae y reconstruye la estructura PEM estándar a partir de cualquier base64 corrompido."""
     if not isinstance(pk, str):
         return pk
-    # Reemplazar cualquier variante de escape por saltos de línea reales
-    pk = pk.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\\\n", "\n")
     
-    # Limpiar líneas vacías o espacios extras manteniendo la estructura PEM
-    lineas = [linea.strip() for linea in pk.split("\n") if linea.strip()]
-    return "\n".join(lineas) + "\n"
+    # 1. Limpiar encabezados, pies y caracteres de escape
+    limpio = (
+        pk.replace("-----BEGIN PRIVATE KEY-----", "")
+        .replace("-----END PRIVATE KEY-----", "")
+        .replace("\\n", "\n")
+        .replace("\r", "")
+    )
+    
+    # 2. Aislar únicamente los caracteres válidos de Base64 (A-Z, a-z, 0-9, +, /, =)
+    base64_solo = "".join(re.findall(r'[A-Za-z0-9+/=]', limpio))
+    
+    # 3. Fragmentar exactamente en bloques de 64 caracteres (estándar PEM oficial)
+    lineas_chunk = [base64_solo[i:i + 64] for i in range(0, len(base64_solo), 64)]
+    base64_formateado = "\n".join(lineas_chunk)
+    
+    return f"-----BEGIN PRIVATE KEY-----\n{base64_formateado}\n-----END PRIVATE KEY-----\n"
+
 
 # 1. Inicialización robusta leyendo el string JSON desde los Secrets
 if not firebase_admin._apps:
@@ -27,7 +41,7 @@ if not firebase_admin._apps:
                 
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             st.error(f"Error crítico al inicializar las credenciales de Firebase: {e}")
             st.stop()
     else:
