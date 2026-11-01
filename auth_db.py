@@ -1,35 +1,32 @@
+import json
+
 import firebase_admin
 import requests
 import streamlit as st
 from firebase_admin import credentials, firestore
 
-# 1. Inicialización basada en la documentación oficial de Streamlit para Secrets
+# 1. Inicialización ultra-robusta leyendo el string JSON desde los Secrets
 if not firebase_admin._apps:
     try:
-        # Verificamos si los secretos de Firebase existen en el entorno de Streamlit
-        if "firebase" in st.secrets:
-            # Convertimos el objeto de secretos a un diccionario mutable estándar
-            cred_dict = dict(st.secrets["firebase"])
+        if "FIREBASE_JSON_STR" in st.secrets:
+            # Cargamos el string como diccionario y corregimos los saltos de línea de la llave privada
+            raw_json = st.secrets["FIREBASE_JSON_STR"]
+            cred_dict = json.loads(raw_json)
             
-            # Normalización estricta del formato PEM de la llave privada
             if "private_key" in cred_dict:
-                private_key_raw = cred_dict["private_key"]
-                # Aseguramos que los saltos de línea sean interpretados de manera real
-                cred_dict["private_key"] = private_key_raw.replace("\\n", "\n")
-            
+                cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+                
             cred = credentials.Certificate(cred_dict)
         else:
-            # Fallback local si no se detectan secretos en la nube
             cred = credentials.Certificate("firebase_key.json")
     except Exception:  # noqa: BLE001
-        # Captura blindada para entorno local con archivo físico
         cred = credentials.Certificate("firebase_key.json")
     
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-# 2. Configuración de Firebase REST API (Auth) con respaldo seguro
+# 2. Configuración de Firebase REST API (Auth)
 try:
     FIREBASE_WEB_API_KEY = st.secrets["FIREBASE_WEB_API_KEY"]
 except Exception:  # noqa: BLE001
