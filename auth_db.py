@@ -5,12 +5,16 @@ import requests
 import streamlit as st
 from firebase_admin import credentials, firestore
 
-# 1. Inicialización limpia y robusta leyendo el JSON crudo desde Secrets
+# 1. Inicialización robusta leyendo el JSON crudo desde Secrets
 if not firebase_admin._apps:
     try:
         if "FIREBASE_JSON" in st.secrets:
-            # Parsear el JSON crudo almacenado en los secretos de la nube
             cred_dict = json.loads(st.secrets["FIREBASE_JSON"])
+            
+            # Corregir los saltos de línea de la llave privada de forma segura
+            if "private_key" in cred_dict:
+                cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+                
             cred = credentials.Certificate(cred_dict)
         else:
             cred = credentials.Certificate("firebase_key.json")
