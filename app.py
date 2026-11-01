@@ -16,18 +16,12 @@ st.set_page_config(
 )
 
 # --- INYECCIÓN DE CSS PARA BRANDING ---
-# Esto oculta el menú de Streamlit, el footer y el botón de Deploy
 estilo_oculto = """
 <style>
-    /* Ocultar menú de hamburguesa y botón Deploy */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     .stAppDeployButton {display:none;}
-    
-    /* Ocultar marca de agua de pie de página */
     footer {visibility: hidden;}
-    
-    /* Personalizar el contenedor principal para darle un aire de tarjeta premium */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
@@ -37,7 +31,6 @@ estilo_oculto = """
 st.markdown(estilo_oculto, unsafe_allow_html=True)
 
 # --- CABECERA DE LA APP ---
-# Usamos columnas para simular un logo y un título corporativo
 col_logo, col_texto = st.columns([1, 6])
 with col_logo:
     st.markdown("<h1 style='text-align: center; color: #3b82f6;'>⚡</h1>", unsafe_allow_html=True)
@@ -52,37 +45,64 @@ archivo_subido = st.file_uploader("Arrastra tu archivo aquí (.xlsx, .csv)", typ
 
 if archivo_subido:
     try:
-        # Leemos el archivo de forma invisible primero
         df_raw = leer_archivo(archivo_subido)
         
         st.subheader("⚙️ Opciones de Limpieza")
         
-        # Armamos las opciones de duplicados con la lista real de columnas
+        # 1. Opciones de duplicados
         opciones_dup = ["Fila exacta (Todas las columnas)"] + list(df_raw.columns)
-        
         columna_seleccionada = st.selectbox(
             "Identificar registros duplicados basándose en:",
             opciones_dup,
             help="Si eliges una columna (ej. Correo), se eliminarán los repetidos conservando solo el registro más reciente."
         )
         
-        # Lógica del botón de limpieza
+        # 2. NUEVO: Filtro Interactivo de Datos Inválidos
+        st.markdown("### 🔍 Filtro de Datos Específicos")
+        valor_buscado = st.text_input(
+            "¿Hay alguna palabra o dato que desees borrar de tu base de datos? (Ej: 'Prueba', 'Cancelado')", 
+            placeholder="Escribe aquí para buscar..."
+        )
+        
+        confirmar_basura = False # Variable de control
+        
+        if valor_buscado:
+            # Buscamos instantáneamente en el dataframe crudo
+            mascara = df_raw.astype(str).apply(lambda col: col.str.contains(valor_buscado, case=False, na=False)).any(axis=1)
+            coincidencias = mascara.sum()
+            
+            if coincidencias > 0:
+                st.warning(f"⚠️ **Atención:** Se encontraron **{coincidencias} filas** que contienen la palabra '{valor_buscado}'.")
+                with st.expander("Ver filas que contienen este dato"):
+                    st.dataframe(df_raw[mascara].head(5), use_container_width=True)
+                
+                # Casilla de confirmación requerida por el usuario
+                confirmar_basura = st.checkbox(f"🚨 Confirmo que deseo ELIMINAR estas {coincidencias} filas durante la limpieza.")
+            else:
+                st.success(f"✅ ¡Todo limpio! La palabra '{valor_buscado}' no existe en esta base de datos.")
+        
+        st.divider()
+
+        # 3. Lógica del botón de limpieza
         if st.button("✨ Aplicar Limpieza", type="primary", use_container_width=True):
             with st.spinner("Limpiando y normalizando datos..."):
                 
-                # Determinamos si usar una columna específica o todo el dataframe
                 clave = None if columna_seleccionada == "Fila exacta (Todas las columnas)" else columna_seleccionada
                 
-                df_limpio, stats = limpiar_dataframe(df_raw, columna_duplicados=clave)
+                # Solo pasamos el valor a borrar si el usuario marcó la casilla de confirmación
+                texto_a_borrar = valor_buscado if confirmar_basura else None
+                
+                df_limpio, stats = limpiar_dataframe(df_raw, columna_duplicados=clave, valor_basura=texto_a_borrar)
                 
                 st.success("¡Archivo procesado con éxito!")
                 
-                # Resultados visuales
+                # Resultados visuales actualizados
                 st.subheader("📊 Resumen de Operación")
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Filas Analizadas", stats["filas_originales"])
-                col2.metric(f"Duplicados ({stats['columna_clave_usada']})", f"-{stats['duplicados_eliminados']}")
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("Filas Originales", stats["filas_originales"])
+                col2.metric("Duplicados", f"-{stats['duplicados_eliminados']}")
                 col3.metric("Filas Vacías", f"-{stats['filas_vacias_eliminadas']}")
+                col4.metric("Filas Filtradas", f"-{stats['filas_basura_eliminadas']}")
                 
                 if stats.get("columnas_rut_normalizadas", 0) > 0:
                     st.info(f"🇨🇱 Se normalizaron **{stats['columnas_rut_normalizadas']} columna(s) de RUT** al formato oficial.")

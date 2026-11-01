@@ -54,28 +54,37 @@ def leer_archivo(ruta_o_buffer) -> pd.DataFrame:
         raise ValueError(f"No se pudo leer el archivo: {e!s}") from e
 
 
-def limpiar_dataframe(df: pd.DataFrame, columna_duplicados: str | None = None) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Limpia el DataFrame y elimina duplicados inteligentemente."""
+def limpiar_dataframe(df: pd.DataFrame, columna_duplicados: str | None = None, valor_basura: str | None = None) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Limpia el DataFrame, elimina duplicados inteligentemente y filtra valores basura."""
     logger.info("Iniciando motor de limpieza de datos...")
     
     df_cleaned = df.copy()
-    filas_orig = len(df_cleaned)  # Solo medimos las filas originales
+    filas_orig = len(df_cleaned)
     ruts_detectados = 0
+    filas_basura_eliminadas = 0
 
     try:
-        # A. Eliminar filas y columnas 100% vacías
-        df_cleaned = df_cleaned.dropna(axis=1, how='all').dropna(how='all')
-        filas_vacias = filas_orig - df_cleaned.shape[0]
-        # Línea eliminada para resolver advertencia de variable no utilizada
-        # cols_vacias = cols_orig - df_cleaned.shape[1] 
+        # 1. Filtro avanzado de datos inválidos (Se hace primero para aligerar la carga)
+        if valor_basura:
+            logger.info(f"Buscando y eliminando filas con el valor basura: '{valor_basura}'")
+            filas_antes_basura = len(df_cleaned)
+            # Busca el valor en todas las columnas como texto (ignorando mayúsculas/minúsculas)
+            mascara_basura = df_cleaned.astype(str).apply(lambda col: col.str.contains(valor_basura, case=False, na=False)).any(axis=1)
+            # Nos quedamos con las filas que NO (~) contienen la basura
+            df_cleaned = df_cleaned[~mascara_basura]
+            filas_basura_eliminadas = filas_antes_basura - len(df_cleaned)
 
-        # B. Detección y normalización de RUTs
+        # 2. Eliminar filas y columnas 100% vacías
+        df_cleaned = df_cleaned.dropna(axis=1, how='all').dropna(how='all')
+        filas_vacias = filas_orig - filas_basura_eliminadas - len(df_cleaned)
+
+        # 3. Detección y normalización de RUTs
         for col in df_cleaned.columns:
             if 'rut' in str(col).lower() or 'run' in str(col).lower():
                 df_cleaned[col] = estandarizar_rut(df_cleaned[col])
                 ruts_detectados += 1
 
-        # C. Limpieza de texto vectorizada
+        # 4. Limpieza de texto vectorizada
         cols_texto = df_cleaned.select_dtypes(include=['object', 'string']).columns
         if not cols_texto.empty:
             for col in cols_texto:
@@ -90,14 +99,12 @@ def limpiar_dataframe(df: pd.DataFrame, columna_duplicados: str | None = None) -
                 regex={r'^(?i)(nan|null|none|)$': pd.NA}
             )
 
-        # D. Detección y eliminación de duplicados inteligente
+        # 5. Detección y eliminación de duplicados inteligente
         filas_antes_dup = len(df_cleaned)
         
         if columna_duplicados and columna_duplicados in df_cleaned.columns:
-            logger.info(f"Eliminando duplicados por columna clave: {columna_duplicados}")
             df_cleaned = df_cleaned.drop_duplicates(subset=[columna_duplicados], keep='last')
         else:
-            logger.info("Eliminando duplicados por coincidencia exacta de fila.")
             df_cleaned = df_cleaned.drop_duplicates()
             
         duplicados = filas_antes_dup - len(df_cleaned)
@@ -105,7 +112,8 @@ def limpiar_dataframe(df: pd.DataFrame, columna_duplicados: str | None = None) -
         # E. Estadísticas
         stats = {
             "filas_originales": filas_orig,
-            "filas_vacias_eliminadas": filas_vacias,
+            "filas_vacias_eliminadas": max(0, filas_vacias),
+            "filas_basura_eliminadas": filas_basura_eliminadas,
             "duplicados_eliminados": duplicados,
             "columnas_rut_normalizadas": ruts_detectados,
             "filas_finales": len(df_cleaned),

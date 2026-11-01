@@ -388,3 +388,4 @@ Traceback (most recent call last):
   File "C:\limpiador-excel-pymes\motor_limpieza.py", line 101, in limpiar_dataframe
     raise RuntimeError(f"Error al limpiar los datos: {e!s}") from e
 RuntimeError: Error al limpiar los datos: global flags not at the start of the expression at position 1
+2026-11-01 16:32:35,538 - [INFO] - === Leyendo archivo crudo: Nuestros KPI´S - ARTHUR .xlsx ===
