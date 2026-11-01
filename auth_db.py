@@ -9,7 +9,7 @@ from firebase_admin import credentials, firestore
 if not firebase_admin._apps:
     try:
         if "FIREBASE_JSON_STR" in st.secrets:
-            # Cargamos el string como diccionario y corregimos los saltos de línea de la llave privada
+            # Cargamos el string crudo y restauramos los saltos de línea reales de la llave privada
             raw_json = st.secrets["FIREBASE_JSON_STR"]
             cred_dict = json.loads(raw_json)
             
@@ -30,7 +30,7 @@ db = firestore.client()
 try:
     FIREBASE_WEB_API_KEY = st.secrets["FIREBASE_WEB_API_KEY"]
 except Exception:  # noqa: BLE001
-    FIREBASE_WEB_API_KEY = "AizaSyDMWU7ke5BXN8qrhUZD2mZgwkbNN4l6DFw"
+    FIREBASE_WEB_API_KEY = "AIzaSyDMWU7kE5BXN8qrhUZD2mZgwkbNN4l6DFw"
 
 
 def registrar_usuario(email: str, password: str) -> dict:
