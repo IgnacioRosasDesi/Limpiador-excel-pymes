@@ -5,24 +5,24 @@ import requests
 import streamlit as st
 from firebase_admin import credentials, firestore
 
-# 1. Inicialización ultra-robusta leyendo el string JSON desde los Secrets
+# 1. Inicialización de Firebase Admin usando string JSON desde Secrets
 if not firebase_admin._apps:
-    try:
-        if "FIREBASE_JSON_STR" in st.secrets:
-            # Cargamos el string crudo y restauramos los saltos de línea reales de la llave privada
+    if "FIREBASE_JSON_STR" in st.secrets:
+        try:
             raw_json = st.secrets["FIREBASE_JSON_STR"]
             cred_dict = json.loads(raw_json)
-            
+
             if "private_key" in cred_dict:
                 cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
-                
+
             cred = credentials.Certificate(cred_dict)
-        else:
-            cred = credentials.Certificate("firebase_key.json")
-    except Exception:  # noqa: BLE001
-        cred = credentials.Certificate("firebase_key.json")
-    
-    firebase_admin.initialize_app(cred)
+            firebase_admin.initialize_app(cred)
+        except Exception as e: # noqa: BLE001
+            st.error(f"Error parseando el JSON de credenciales de Firebase: {e}")
+            st.stop()
+    else:
+        st.error("⚠️ Falta configurar el secreto 'FIREBASE_JSON_STR' en el panel de Streamlit Cloud.")
+        st.stop()
 
 db = firestore.client()
 
