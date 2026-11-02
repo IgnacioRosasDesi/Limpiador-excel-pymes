@@ -44,77 +44,127 @@ if 'usuario_autenticado' not in st.session_state:
     st.session_state['usuario_autenticado'] = False
 if 'usuario_email' not in st.session_state:
     st.session_state['usuario_email'] = ""
+if 'mostrar_login' not in st.session_state:
+    st.session_state['mostrar_login'] = False
 
 # =========================================================
-# PANTALLA DE LOGIN Y REGISTRO (SI NO ESTÁ AUTENTICADO)
+# PANTALLA PÚBLICA / LANDING PAGE O LOGIN (SI NO ESTÁ AUTENTICADO)
 # =========================================================
 if not st.session_state['usuario_autenticado']:
-    st.markdown("<h1 style='text-align: center; color: #3b82f6;'>⚡ RowRescue</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #94a3b8;'>Acceso a la plataforma de DesiLabs</p>", unsafe_allow_html=True)
-    st.write("")
     
-    tab_login, tab_registro = st.tabs(["🔑 Iniciar Sesión", "📝 Registrarse"])
-    
-    with tab_login:
-        email_login = st.text_input("Correo electrónico", key="log_email")
-        pass_login = st.text_input("Contraseña", type="password", key="log_pass")
-        
-        if st.button("Entrar a la Plataforma", type="primary", use_container_width=True):
-            if email_login and pass_login:
-                with st.spinner("Autenticando..."):
-                    res = iniciar_sesion(email_login, pass_login)
-                    if "error" in res:
-                        st.error("Credenciales incorrectas o el usuario no existe.")
-                    else:
-                        st.session_state['usuario_autenticado'] = True
-                        st.session_state['usuario_email'] = res['email']
-                        st.rerun() 
-            else:
-                st.warning("Por favor ingresa tu correo y contraseña.")
-        
-        with st.expander("¿Olvidaste tu contraseña?"):
-            st.write("Ingresa tu correo para recibir un enlace seguro de recuperación.")
-            email_recuperacion = st.text_input("Tu correo electrónico registrado", key="recuperacion")
+    # Si el usuario hizo clic en "Ir al Sistema / Login"
+    if st.session_state['mostrar_login']:
+        if st.button("← Volver a la presentación"):
+            st.session_state['mostrar_login'] = False
+            st.rerun()
             
-            if st.button("Enviar enlace de recuperación", use_container_width=True):
-                if email_recuperacion:
-                    with st.spinner("Verificando..."):
-                        res_recup = enviar_recuperacion_clave(email_recuperacion)
-                        if "error" not in res_recup:
-                            st.success("✅ Si el correo existe en DesiLabs, recibirás instrucciones en unos minutos.")
-                        else:
-                            st.error("Ocurrió un error al intentar enviar el correo. Revisa que el formato sea correcto.")
-                else:
-                    st.warning("Por favor, ingresa un correo válido.")
-                
-    with tab_registro:
-        email_reg = st.text_input("Correo electrónico", key="reg_email")
-        pass_reg = st.text_input("Contraseña (mín. 6 caracteres)", type="password", key="reg_pass")
-        pass_reg_conf = st.text_input("Confirmar Contraseña", type="password", key="reg_pass_conf")
+        st.markdown("<h1 style='text-align: center; color: #3b82f6;'>⚡ RowRescue</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #94a3b8;'>Acceso a la plataforma de DesiLabs</p>", unsafe_allow_html=True)
+        st.write("")
         
-        if st.button("Crear Cuenta Gratuita", type="primary", use_container_width=True):
-            if pass_reg != pass_reg_conf:
-                st.error("Las contraseñas no coinciden.")
-            elif len(pass_reg) < 6:
-                st.error("La contraseña debe tener al menos 6 caracteres.")
-            elif email_reg and pass_reg:
-                with st.spinner("Creando cuenta y validando..."):
-                    res = registrar_usuario(email_reg, pass_reg)
-                    
-                    if "error" in res:
-                        st.error(f"Error al registrar: {res['error'].get('message', 'Correo inválido o en uso.')}")
-                    else:
-                        id_token = res.get("idToken")
-                        if id_token:
-                            verif_res = enviar_correo_verificacion(id_token)
-                            if "error" not in verif_res:
-                                st.success("✅ ¡Cuenta creada exitosamente! Hemos enviado un enlace de seguridad a tu correo para verificar tu identidad.")
-                            else:
-                                st.warning("✅ Cuenta creada, pero hubo un problema enviando el correo de verificación.")
+        tab_login, tab_registro = st.tabs(["🔑 Iniciar Sesión", "📝 Registrarse"])
+        
+        with tab_login:
+            email_login = st.text_input("Correo electrónico", key="log_email")
+            pass_login = st.text_input("Contraseña", type="password", key="log_pass")
+            
+            if st.button("Entrar a la Plataforma", type="primary", use_container_width=True):
+                if email_login and pass_login:
+                    with st.spinner("Autenticando..."):
+                        res = iniciar_sesion(email_login, pass_login)
+                        if "error" in res:
+                            st.error("Credenciales incorrectas o el usuario no existe.")
                         else:
-                            st.success("✅ ¡Cuenta creada exitosamente! Ahora ve a la pestaña 'Iniciar Sesión' para entrar.")
-            else:
-                st.warning("Completa todos los campos.")
+                            st.session_state['usuario_autenticado'] = True
+                            st.session_state['usuario_email'] = res['email']
+                            st.rerun() 
+                else:
+                    st.warning("Por favor ingresa tu correo y contraseña.")
+            
+            with st.expander("¿Olvidaste tu contraseña?"):
+                st.write("Ingresa tu correo para recibir un enlace seguro de recuperación.")
+                email_recuperacion = st.text_input("Tu correo electrónico registrado", key="recuperacion")
+                
+                if st.button("Enviar enlace de recuperación", use_container_width=True):
+                    if email_recuperacion:
+                        with st.spinner("Verificando..."):
+                            res_recup = enviar_recuperacion_clave(email_recuperacion)
+                            if "error" not in res_recup:
+                                st.success("✅ Si el correo existe en DesiLabs, recibirás instrucciones en unos minutos.")
+                            else:
+                                st.error("Ocurrió un error al intentar enviar el correo. Revisa que el formato sea correcto.")
+                    else:
+                        st.warning("Por favor, ingresa un correo válido.")
+                    
+        with tab_registro:
+            email_reg = st.text_input("Correo electrónico", key="reg_email")
+            pass_reg = st.text_input("Contraseña (mín. 6 caracteres)", type="password", key="reg_pass")
+            pass_reg_conf = st.text_input("Confirmar Contraseña", type="password", key="reg_pass_conf")
+            
+            if st.button("Crear Cuenta Gratuita", type="primary", use_container_width=True):
+                if pass_reg != pass_reg_conf:
+                    st.error("Las contraseñas no coinciden.")
+                elif len(pass_reg) < 6:
+                    st.error("La contraseña debe tener al menos 6 caracteres.")
+                elif email_reg and pass_reg:
+                    with st.spinner("Creando cuenta y validando..."):
+                        res = registrar_usuario(email_reg, pass_reg)
+                        
+                        if "error" in res:
+                            st.error(f"Error al registrar: {res['error'].get('message', 'Correo inválido o en uso.')}")
+                        else:
+                            id_token = res.get("idToken")
+                            if id_token:
+                                verif_res = enviar_correo_verificacion(id_token)
+                                if "error" not in verif_res:
+                                    st.success("✅ ¡Cuenta creada exitosamente! Hemos enviado un enlace de seguridad a tu correo para verificar tu identidad.")
+                                else:
+                                    st.warning("✅ Cuenta creada, pero hubo un problema enviando el correo de verificación.")
+                            else:
+                                st.success("✅ ¡Cuenta creada exitosamente! Ahora ve a la pestaña 'Iniciar Sesión' para entrar.")
+                else:
+                    st.warning("Completa todos los campos.")
+                    
+    # Si estamos en la Landing Page Pública
+    else:
+        col_top1, col_top2 = st.columns([4, 2])
+        with col_top2:
+            if st.button("🔑 Iniciar Sesión", type="secondary", use_container_width=True):
+                st.session_state['mostrar_login'] = True
+                st.rerun()
+
+        st.markdown("<h1 style='text-align: center; color: #3b82f6;'>⚡ RowRescue</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center;'>La plataforma inteligente para estandarizar y limpiar tus bases de datos</h3>", unsafe_allow_html=True)
+        st.write("")
+        st.markdown(
+            "<p style='text-align: center; color: #94a3b8; font-size: 1.1rem;'>"
+            "Optimiza tus planillas de Excel y CSV en segundos. Elimina duplicados masivos, filtra datos "
+            "indeseados y descarga tus reportes listos para la toma de decisiones."
+            "</p>", 
+            unsafe_allow_html=True
+        )
+        st.write("")
+        
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+        with col_btn2:
+            if st.button("🚀 Probar Plataforma Gratis", type="primary", use_container_width=True):
+                st.session_state['mostrar_login'] = True
+                st.rerun()
+                
+        st.divider()
+        
+        st.subheader("💡 ¿Por qué elegir RowRescue?")
+        
+        col_feat1, col_feat2, col_feat3 = st.columns(3)
+        with col_feat1:
+            st.markdown("### 📁 Masivo")
+            st.write("Sube múltiples archivos a la vez y recíbelos limpios en un archivo `.zip` organizado.")
+        with col_feat2:
+            st.markdown("### 🔍 Preciso")
+            st.write("Elimina filas duplicadas por columna o detecta textos basura en toda la base de datos.")
+        with col_feat3:
+            st.markdown("### 📈 Visual")
+            st.write("Analiza gráficos de impacto en tiempo real con la proporción exacta de datos rescatados.")
 
 # =========================================================
 # APLICACIÓN PRINCIPAL ROWRESCUE (SI ESTÁ AUTENTICADO)
@@ -128,6 +178,7 @@ else:
         if st.button("Cerrar Sesión", use_container_width=True):
             st.session_state['usuario_autenticado'] = False
             st.session_state['usuario_email'] = ""
+            st.session_state['mostrar_login'] = False
             st.rerun()
             
     st.divider()
