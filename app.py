@@ -1,5 +1,5 @@
 # 1. Imports nativos
-import zipfile  # Nuevo import nativo para manejar archivos ZIP
+import zipfile
 from io import BytesIO
 
 # 2. Imports de terceros
@@ -146,13 +146,12 @@ else:
     archivos_subidos = st.file_uploader(
         "Arrastra uno o múltiples archivos aquí (.xlsx, .csv)", 
         type=["xlsx", "xls", "csv"],
-        accept_multiple_files=True, # ¡El cambio clave! Ahora acepta varios.
+        accept_multiple_files=True,
         help="💡 Puedes subir varios archivos a la vez. El sistema los procesará todos con la misma configuración y te entregará un archivo ZIP con los resultados."
     )
 
     if archivos_subidos:
         try:
-            # Como ahora son varios archivos, leemos el primero para sacar las columnas de ejemplo
             df_ejemplo = leer_archivo(archivos_subidos[0])
             
             st.subheader("⚙️ Opciones de Limpieza Masiva", help="Esta configuración se aplicará a TODOS los archivos que subiste.")
@@ -161,7 +160,7 @@ else:
             columna_seleccionada = st.selectbox(
                 "Identificar registros duplicados basándose en:",
                 opciones_dup,
-                help="Nota: Si subiste archivos con columnas diferentes, asegúrate de elegir 'Fila exacta' para evitar errores de columnas no encontradas en los otros archivos."
+                help="Nota: Si subiste archivos con columnas diferentes, asegúrate de elegir 'Fila exacta' para evitar errores."
             )
             
             st.markdown("### 🔍 Filtro de Datos Específicos")
@@ -185,34 +184,27 @@ else:
                     clave = None if columna_seleccionada == "Fila exacta (Todas las columnas)" else columna_seleccionada
                     texto_a_borrar = valor_buscado if confirmar_basura else None
                     
-                    # Preparar un archivo ZIP en memoria
                     zip_buffer = BytesIO()
                     
-                    # Totales globales para mostrar al usuario
+                    total_originales = 0
                     total_duplicados = 0
                     total_vacias = 0
                     total_basura = 0
                     
                     with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-                        
-                        # Iterar sobre todos los archivos subidos
                         for archivo in archivos_subidos:
                             df_raw = leer_archivo(archivo)
-                            
-                            # Limpiar este archivo individual
                             df_limpio, stats = limpiar_dataframe(df_raw, columna_duplicados=clave, valor_basura=texto_a_borrar)
                             
-                            # Sumar a las estadísticas globales
+                            total_originales += stats['filas_originales']
                             total_duplicados += stats['duplicados_eliminados']
                             total_vacias += stats['filas_vacias_eliminadas']
                             total_basura += stats['filas_basura_eliminadas']
                             
-                            # Guardar este DataFrame limpio en un buffer temporal de Excel
                             excel_buffer = BytesIO()
                             with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
                                 df_limpio.to_excel(writer, index=False, sheet_name='Limpio')
                             
-                            # Escribir el Excel temporal dentro del ZIP general
                             nombre_archivo_limpio = f"limpio_{archivo.name.rsplit('.', 1)[0]}.xlsx"
                             zip_file.writestr(nombre_archivo_limpio, excel_buffer.getvalue())
                     
@@ -224,6 +216,29 @@ else:
                     col2.metric("Total Duplicados", f"-{total_duplicados}")
                     col3.metric("Total Vacías", f"-{total_vacias}")
                     col4.metric("Total Filtradas", f"-{total_basura}")
+                    
+                    # --- GRÁFICOS VISUALES DE IMPACTO ---
+                    st.markdown("### 📈 Impacto Visual")
+                    total_eliminadas = total_duplicados + total_vacias + total_basura
+                    total_limpias = total_originales - total_eliminadas
+                    
+                    col_chart1, col_chart2 = st.columns(2)
+                    
+                    with col_chart1:
+                        st.caption("Proporción de Datos (Conservados vs Eliminados)")
+                        df_resumen = pd.DataFrame({
+                            "Estado": ["Conservados", "Eliminados"],
+                            "Cantidad": [total_limpias, total_eliminadas]
+                        }).set_index("Estado")
+                        st.bar_chart(df_resumen, color="#3b82f6")
+                        
+                    with col_chart2:
+                        st.caption("Detalle de Basura Eliminada")
+                        df_detalle = pd.DataFrame({
+                            "Motivo": ["Duplicados", "Vacías", "Filtro"],
+                            "Cantidad": [total_duplicados, total_vacias, total_basura]
+                        }).set_index("Motivo")
+                        st.bar_chart(df_detalle, color="#ef4444")
                     
                     st.download_button(
                         label=f"⬇️ Descargar Resultados ({len(archivos_subidos)} archivos en .ZIP)",
