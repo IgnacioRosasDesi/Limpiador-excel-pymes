@@ -5,7 +5,13 @@ from io import BytesIO
 import pandas as pd
 import streamlit as st
 
-from auth_db import iniciar_sesion, registrar_usuario
+# Importamos las nuevas funciones de Firebase
+from auth_db import (
+    enviar_correo_verificacion,
+    enviar_recuperacion_clave,
+    iniciar_sesion,
+    registrar_usuario,
+)
 
 # 3. Imports locales
 from motor_limpieza import leer_archivo, limpiar_dataframe
@@ -65,6 +71,22 @@ if not st.session_state['usuario_autenticado']:
                         st.rerun() # Recarga la página para entrar
             else:
                 st.warning("Por favor ingresa tu correo y contraseña.")
+        
+        # --- B. RECUPERACIÓN DE CONTRASEÑA ---
+        with st.expander("¿Olvidaste tu contraseña?"):
+            st.write("Ingresa tu correo para recibir un enlace seguro de recuperación.")
+            email_recuperacion = st.text_input("Tu correo electrónico registrado", key="recuperacion")
+            
+            if st.button("Enviar enlace de recuperación", use_container_width=True):
+                if email_recuperacion:
+                    with st.spinner("Verificando..."):
+                        res_recup = enviar_recuperacion_clave(email_recuperacion)
+                        if "error" not in res_recup:
+                            st.success("✅ Si el correo existe en DesiLabs, recibirás instrucciones en unos minutos.")
+                        else:
+                            st.error("Ocurrió un error al intentar enviar el correo. Revisa que el formato sea correcto.")
+                else:
+                    st.warning("Por favor, ingresa un correo válido.")
                 
     with tab_registro:
         email_reg = st.text_input("Correo electrónico", key="reg_email")
@@ -77,12 +99,22 @@ if not st.session_state['usuario_autenticado']:
             elif len(pass_reg) < 6:
                 st.error("La contraseña debe tener al menos 6 caracteres.")
             elif email_reg and pass_reg:
-                with st.spinner("Creando cuenta en los servidores..."):
+                with st.spinner("Creando cuenta y validando..."):
                     res = registrar_usuario(email_reg, pass_reg)
+                    
                     if "error" in res:
-                        st.error("Error al registrar: Este correo ya está en uso o es inválido.")
+                        st.error(f"Error al registrar: {res['error'].get('message', 'Correo inválido o en uso.')}")
                     else:
-                        st.success("✅ ¡Cuenta creada exitosamente! Ahora ve a la pestaña 'Iniciar Sesión' para entrar.")
+                        # --- A. VERIFICACIÓN DE EMAIL ---
+                        id_token = res.get("idToken")
+                        if id_token:
+                            verif_res = enviar_correo_verificacion(id_token)
+                            if "error" not in verif_res:
+                                st.success("✅ ¡Cuenta creada exitosamente! Hemos enviado un enlace de seguridad a tu correo para verificar tu identidad.")
+                            else:
+                                st.warning("✅ Cuenta creada, pero hubo un problema enviando el correo de verificación.")
+                        else:
+                            st.success("✅ ¡Cuenta creada exitosamente! Ahora ve a la pestaña 'Iniciar Sesión' para entrar.")
             else:
                 st.warning("Completa todos los campos.")
 
