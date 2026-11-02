@@ -74,3 +74,44 @@ def obtener_historial_usuario(email: str) -> list:
     except Exception as e: # noqa: BLE001
         print(f"Error obteniendo historial: {e}")
         return []
+
+def guardar_preset_usuario(email: str, nombre_preset: str, columna: str, texto_basura: str):
+    """Guarda una configuración de limpieza favorita en Firestore."""
+    try:
+        doc_ref = db.collection("presets_limpieza").document()
+        doc_ref.set({
+            "email": email,
+            "nombre_preset": nombre_preset,
+            "columna": columna,
+            "texto_basura": texto_basura,
+            "fecha": datetime.now(UTC).isoformat()
+        })
+        return True
+    except Exception as e:  # noqa: BLE001
+        print(f"Error guardando preset: {e}")
+        return False
+
+def obtener_presets_usuario(email: str) -> list:
+    """Recupera los presets guardados del usuario desde Firestore."""
+    try:
+        docs = db.collection("presets_limpieza")\
+                 .where("email", "==", email)\
+                 .stream()
+        return [doc.to_dict() for doc in docs]
+    except Exception as e:  # noqa: BLE001
+        print(f"Error obteniendo presets: {e}")
+        return []
+
+def eliminar_preset_usuario(email: str, nombre_preset: str):
+    """Elimina un preset guardado del usuario."""
+    try:
+        docs = db.collection("presets_limpieza")\
+                 .where("email", "==", email)\
+                 .where("nombre_preset", "==", nombre_preset)\
+                 .stream()
+        for doc in docs:
+            doc.reference.delete()
+        return True
+    except Exception as e:  # noqa: BLE001
+        print(f"Error eliminando preset: {e}")
+        return False

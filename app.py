@@ -7,13 +7,16 @@ from io import BytesIO
 import pandas as pd
 import streamlit as st
 
-# Importamos las funciones de Firebase (incluyendo el historial)
+# Importamos todas las funciones de Firebase (Auth, Firestore Historial y Presets)
 from auth_db import (
+    eliminar_preset_usuario,
     enviar_correo_verificacion,
     enviar_recuperacion_clave,
     guardar_historial_limpieza,
+    guardar_preset_usuario,
     iniciar_sesion,
     obtener_historial_usuario,
+    obtener_presets_usuario,
     registrar_usuario,
 )
 
@@ -199,11 +202,10 @@ else:
         historial_usuario = obtener_historial_usuario(st.session_state['usuario_email'])
         if historial_usuario:
             for h in historial_usuario:
-                # Formatear fecha legible
                 try:
                     dt = datetime.fromisoformat(h.get("fecha", ""))
                     fecha_str = dt.strftime("%d-%m-%Y %H:%M")
-                except Exception: # noqa: BLE001
+                except Exception:  # noqa: BLE001
                     fecha_str = "Reciente"
                 
                 st.markdown(f"- **{fecha_str}** — 📁 {h.get('num_archivos', 1)} archivo(s) procesados | 🗑️ {h.get('duplicados_eliminados', 0) + h.get('vacias_eliminadas', 0) + h.get('basura_eliminada', 0)} elementos eliminados en total.")
@@ -217,28 +219,80 @@ else:
         "Arrastra uno o múltiples archivos aquí (.xlsx, .csv)", 
         type=["xlsx", "xls", "csv"],
         accept_multiple_files=True,
-        help="💡 Puedes subir varios archivos a la vez. El sistema los procesará todos con la misma configuración y te entregará un archivo ZIP con los resultados."
+        help="💡 Puedes subir varios archivos a la vez. El sistema los procesará todos y te entregará un archivo ZIP."
     )
 
     if archivos_subidos:
         try:
             df_ejemplo = leer_archivo(archivos_subidos[0])
             
-            st.subheader("⚙️ Opciones de Limpieza Masiva", help="Esta configuración se aplicará a TODOS los archivos que subiste.")
+            # --- CARGAR PRESETS GUARDADOS ---
+            presets_disponibles = obtener_presets_usuario(st.session_state['usuario_email'])
+            nombres_presets = ["-- Personalizado (Sin preset) --"] + [p["nombre_preset"] for p in presets_disponibles]
             
+            st.subheader("⚙️ Opciones de Limpieza Masiva")
+            
+            preset_seleccionado = st.selectbox("📂 Cargar Preset Guardado", nombres_presets)
+            
+            # Valores por defecto según preset seleccionado
+            def_columna = "Fila exacta (Todas las columnas)"
+            def_texto = ""
+            
+            if preset_seleccionado != "-- Personalizado (Sin preset) --":
+                for p in presets_disponibles:
+                    if p["nombre_preset"] == preset_seleccionado:
+                        def_columna = p["columna"]
+                        def_texto = p["texto_basura"]
+                st.info(f"✨ Preset '{preset_seleccionado}' cargado correctamente.")
+
             opciones_dup = ["Fila exacta (Todas las columnas)"] + list(df_ejemplo.columns)
+            
+            # Manejar índice por defecto del selectbox
+            index_col = 0
+            if def_columna in opciones_dup:
+                index_col = opciones_dup.index(def_columna)
+                
             columna_seleccionada = st.selectbox(
                 "Identificar registros duplicados basándose en:",
                 opciones_dup,
-                help="Nota: Si subiste archivos con columnas diferentes, asegúrate de elegir 'Fila exacta' para evitar errores."
+                index=index_col
             )
             
             st.markdown("### 🔍 Filtro de Datos Específicos")
             valor_buscado = st.text_input(
                 "¿Hay alguna palabra o dato que desees borrar de tu base de datos? (Ej: 'Prueba', 'Cancelado')", 
+                value=def_texto,
                 placeholder="Escribe aquí para buscar..."
             )
             
+            # --- GESTIÓN DE GUARDAR / ELIMINAR PRESET ---
+            with st.expander("💾 Guardar o gestionar esta configuración como Preset"):
+                nuevo_nombre_preset = st.text_input("Nombre para este preset (Ej: 'Limpieza Clientes Mensual')")
+                col_btn_save, col_btn_del = st.columns(2)
+                
+                with col_btn_save:
+                    if st.button("Guardar Configuración"):
+                        if nuevo_nombre_preset:
+                            ok = guardar_preset_usuario(
+                                st.session_state['usuario_email'], 
+                                nuevo_nombre_preset, 
+                                columna_seleccionada, 
+                                valor_buscado
+                            )
+                            if ok:
+                                st.success(f"Preset '{nuevo_nombre_preset}' guardado con éxito.")
+                                st.rerun()
+                            else:
+                                st.error("Error al guardar el preset.")
+                        else:
+                            st.warning("Ingresa un nombre para el preset.")
+                            
+                with col_btn_del:
+                    if presets_disponibles and preset_seleccionado != "-- Personalizado (Sin preset) --"and st.button("🗑️ Borrar preset actual"):
+                            eliminar_preset_usuario(st.session_state['usuario_email'], preset_seleccionado)
+                            st.success("Preset eliminado.")
+                            st.rerun()
+
             confirmar_basura = False
             if valor_buscado:
                  confirmar_basura = st.checkbox(
@@ -278,7 +332,7 @@ else:
                             nombre_archivo_limpio = f"limpio_{archivo.name.rsplit('.', 1)[0]}.xlsx"
                             zip_file.writestr(nombre_archivo_limpio, excel_buffer.getvalue())
                     
-                    # --- GUARDAR EN FIRESTORE EL HISTORIAL ---
+                    # Guardar historial en Firestore
                     stats_globales = {
                         "originales": total_originales,
                         "duplicados": total_duplicados,
@@ -296,7 +350,7 @@ else:
                     col3.metric("Total Vacías", f"-{total_vacias}")
                     col4.metric("Total Filtradas", f"-{total_basura}")
                     
-                    # --- GRÁFICOS VISUALES DE IMPACTO ---
+                    # Gráficos de impacto
                     st.markdown("### 📈 Impacto Visual")
                     total_eliminadas = total_duplicados + total_vacias + total_basura
                     total_limpias = total_originales - total_eliminadas
@@ -330,5 +384,5 @@ else:
                     
         except (ValueError, RuntimeError) as e:
             st.warning(f"Aviso sobre tus datos: {e!s}")
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             st.error(f"Error procesando los archivos: {e!s}")
