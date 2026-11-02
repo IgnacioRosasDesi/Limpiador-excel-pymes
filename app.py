@@ -1,11 +1,12 @@
 # 1. Imports nativos
+import zipfile  # Nuevo import nativo para manejar archivos ZIP
 from io import BytesIO
 
 # 2. Imports de terceros
 import pandas as pd
 import streamlit as st
 
-# Importamos las nuevas funciones de Firebase
+# Importamos las funciones de Firebase
 from auth_db import (
     enviar_correo_verificacion,
     enviar_recuperacion_clave,
@@ -52,7 +53,6 @@ if not st.session_state['usuario_autenticado']:
     st.markdown("<p style='text-align: center; color: #94a3b8;'>Acceso a la plataforma de DesiLabs</p>", unsafe_allow_html=True)
     st.write("")
     
-    # Creamos dos pestañas para separar Login de Registro
     tab_login, tab_registro = st.tabs(["🔑 Iniciar Sesión", "📝 Registrarse"])
     
     with tab_login:
@@ -68,11 +68,10 @@ if not st.session_state['usuario_autenticado']:
                     else:
                         st.session_state['usuario_autenticado'] = True
                         st.session_state['usuario_email'] = res['email']
-                        st.rerun() # Recarga la página para entrar
+                        st.rerun() 
             else:
                 st.warning("Por favor ingresa tu correo y contraseña.")
         
-        # --- B. RECUPERACIÓN DE CONTRASEÑA ---
         with st.expander("¿Olvidaste tu contraseña?"):
             st.write("Ingresa tu correo para recibir un enlace seguro de recuperación.")
             email_recuperacion = st.text_input("Tu correo electrónico registrado", key="recuperacion")
@@ -105,7 +104,6 @@ if not st.session_state['usuario_autenticado']:
                     if "error" in res:
                         st.error(f"Error al registrar: {res['error'].get('message', 'Correo inválido o en uso.')}")
                     else:
-                        # --- A. VERIFICACIÓN DE EMAIL ---
                         id_token = res.get("idToken")
                         if id_token:
                             verif_res = enviar_correo_verificacion(id_token)
@@ -144,93 +142,99 @@ else:
     st.markdown("<p style='color: #94a3b8; font-size: 1.1rem;'>Plataforma inteligente de estandarización y limpieza de bases de datos.</p>", unsafe_allow_html=True)
     st.divider()
 
-    # --- LÓGICA PRINCIPAL DE LIMPIEZA ---
-    archivo_subido = st.file_uploader(
-        "Arrastra tu archivo aquí (.xlsx, .csv)", 
+    # --- LÓGICA PRINCIPAL DE LIMPIEZA MÚLTIPLE ---
+    archivos_subidos = st.file_uploader(
+        "Arrastra uno o múltiples archivos aquí (.xlsx, .csv)", 
         type=["xlsx", "xls", "csv"],
-        help="💡 Tus datos están seguros. El archivo se procesa temporalmente en la memoria y se elimina apenas descargas el resultado."
+        accept_multiple_files=True, # ¡El cambio clave! Ahora acepta varios.
+        help="💡 Puedes subir varios archivos a la vez. El sistema los procesará todos con la misma configuración y te entregará un archivo ZIP con los resultados."
     )
 
-    if archivo_subido:
+    if archivos_subidos:
         try:
-            df_raw = leer_archivo(archivo_subido)
+            # Como ahora son varios archivos, leemos el primero para sacar las columnas de ejemplo
+            df_ejemplo = leer_archivo(archivos_subidos[0])
             
-            st.subheader("⚙️ Opciones de Limpieza", help="Configura cómo quieres que el sistema limpie tu archivo antes de procesarlo.")
+            st.subheader("⚙️ Opciones de Limpieza Masiva", help="Esta configuración se aplicará a TODOS los archivos que subiste.")
             
-            opciones_dup = ["Fila exacta (Todas las columnas)"] + list(df_raw.columns)
+            opciones_dup = ["Fila exacta (Todas las columnas)"] + list(df_ejemplo.columns)
             columna_seleccionada = st.selectbox(
                 "Identificar registros duplicados basándose en:",
                 opciones_dup,
-                help="""**¿Cómo funciona esto?**\n
-    - **Fila exacta:** Solo borrará un registro si TODOS sus datos son 100% idénticos a otro.
-    - **Columna específica (Ej. Correo o RUT):** Si eliges una columna, el sistema buscará si ese dato se repite. Si Juan Pérez está 3 veces con el mismo correo, conservará solo el último registro y borrará los antiguos."""
+                help="Nota: Si subiste archivos con columnas diferentes, asegúrate de elegir 'Fila exacta' para evitar errores de columnas no encontradas en los otros archivos."
             )
             
             st.markdown("### 🔍 Filtro de Datos Específicos")
             valor_buscado = st.text_input(
                 "¿Hay alguna palabra o dato que desees borrar de tu base de datos? (Ej: 'Prueba', 'Cancelado')", 
-                placeholder="Escribe aquí para buscar...",
-                help="💡 Si tienes filas llenas de datos de prueba o clientes cancelados, escribe la palabra clave aquí. El sistema rastreará todo el documento y te permitirá eliminar esas filas de un solo golpe."
+                placeholder="Escribe aquí para buscar..."
             )
             
             confirmar_basura = False
-            
             if valor_buscado:
-                mascara = df_raw.astype(str).apply(lambda col: col.str.contains(valor_buscado, case=False, na=False)).any(axis=1)
-                coincidencias = mascara.sum()
-                
-                if coincidencias > 0:
-                    st.warning(f"⚠️ **Atención:** Se encontraron **{coincidencias} filas** que contienen la palabra '{valor_buscado}'.")
-                    with st.expander("Ver filas que contienen este dato"):
-                        st.dataframe(df_raw[mascara].head(5), use_container_width=True)
-                    
-                    confirmar_basura = st.checkbox(
-                        f"🚨 Confirmo que deseo ELIMINAR estas {coincidencias} filas durante la limpieza.",
-                        help="Debes marcar esta casilla para autorizar la eliminación de estos registros."
+                 confirmar_basura = st.checkbox(
+                        f"🚨 Confirmo que deseo ELIMINAR todas las filas que contengan '{valor_buscado}' en TODOS mis archivos.",
+                        help="Atención: Esta eliminación ocurrirá en todos los documentos que hayas subido."
                     )
-                else:
-                    st.success(f"✅ ¡Todo limpio! La palabra '{valor_buscado}' no existe en esta base de datos.")
             
             st.divider()
 
-            if st.button("✨ Aplicar Limpieza", type="primary", use_container_width=True, help="Haz clic para procesar tu archivo con todas las configuraciones seleccionadas arriba."):
-                with st.spinner("Limpiando y normalizando datos..."):
+            if st.button("✨ Procesar Archivos", type="primary", use_container_width=True):
+                with st.spinner(f"Limpiando {len(archivos_subidos)} archivo(s)... esto puede tomar un momento."):
                     
                     clave = None if columna_seleccionada == "Fila exacta (Todas las columnas)" else columna_seleccionada
                     texto_a_borrar = valor_buscado if confirmar_basura else None
                     
-                    df_limpio, stats = limpiar_dataframe(df_raw, columna_duplicados=clave, valor_basura=texto_a_borrar)
+                    # Preparar un archivo ZIP en memoria
+                    zip_buffer = BytesIO()
                     
-                    st.success("¡Archivo procesado con éxito!")
+                    # Totales globales para mostrar al usuario
+                    total_duplicados = 0
+                    total_vacias = 0
+                    total_basura = 0
                     
-                    st.subheader("📊 Resumen de Operación", help="Este es el reporte final de todo lo que el motor limpió por ti.")
-                    col1, col2, col3, col4 = st.columns(4)
-                    col1.metric("Filas Originales", stats["filas_originales"])
-                    col2.metric("Duplicados", f"-{stats['duplicados_eliminados']}")
-                    col3.metric("Filas Vacías", f"-{stats['filas_vacias_eliminadas']}")
-                    col4.metric("Filas Filtradas", f"-{stats['filas_basura_eliminadas']}")
-                    
-                    if stats.get("columnas_rut_normalizadas", 0) > 0:
-                        st.info(f"🇨🇱 Se normalizaron **{stats['columnas_rut_normalizadas']} columna(s) de RUT** al formato oficial.")
-                    
-                    with st.expander("Ver vista previa de los datos procesados"):
-                        st.dataframe(df_limpio.head(15), use_container_width=True)
+                    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
                         
-                    buffer = BytesIO()
-                    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                        df_limpio.to_excel(writer, index=False, sheet_name='RowRescue')
+                        # Iterar sobre todos los archivos subidos
+                        for archivo in archivos_subidos:
+                            df_raw = leer_archivo(archivo)
+                            
+                            # Limpiar este archivo individual
+                            df_limpio, stats = limpiar_dataframe(df_raw, columna_duplicados=clave, valor_basura=texto_a_borrar)
+                            
+                            # Sumar a las estadísticas globales
+                            total_duplicados += stats['duplicados_eliminados']
+                            total_vacias += stats['filas_vacias_eliminadas']
+                            total_basura += stats['filas_basura_eliminadas']
+                            
+                            # Guardar este DataFrame limpio en un buffer temporal de Excel
+                            excel_buffer = BytesIO()
+                            with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                                df_limpio.to_excel(writer, index=False, sheet_name='Limpio')
+                            
+                            # Escribir el Excel temporal dentro del ZIP general
+                            nombre_archivo_limpio = f"limpio_{archivo.name.rsplit('.', 1)[0]}.xlsx"
+                            zip_file.writestr(nombre_archivo_limpio, excel_buffer.getvalue())
+                    
+                    st.success("¡Todos los archivos procesados con éxito!")
+                    
+                    st.subheader("📊 Resumen de Limpieza Masiva")
+                    col1, col2, col3, col4 = st.columns(4)
+                    col1.metric("Archivos", len(archivos_subidos))
+                    col2.metric("Total Duplicados", f"-{total_duplicados}")
+                    col3.metric("Total Vacías", f"-{total_vacias}")
+                    col4.metric("Total Filtradas", f"-{total_basura}")
                     
                     st.download_button(
-                        label="⬇️ Descargar Base de Datos Limpia (Excel)",
-                        data=buffer.getvalue(),
-                        file_name="RowRescue_export.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        label=f"⬇️ Descargar Resultados ({len(archivos_subidos)} archivos en .ZIP)",
+                        data=zip_buffer.getvalue(),
+                        file_name="RowRescue_Limpieza_Masiva.zip",
+                        mime="application/zip",
                         type="secondary",
                         use_container_width=True,
-                        help="Descarga tu archivo limpio en formato Excel, listo para usarse."
                     )
                     
         except (ValueError, RuntimeError) as e:
             st.warning(f"Aviso sobre tus datos: {e!s}")
         except Exception as e: # noqa: BLE001
-            st.error(f"Error procesando el archivo: {e!s}")
+            st.error(f"Error procesando los archivos: {e!s}")
