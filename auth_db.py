@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import firebase_admin
 import requests
 import streamlit as st
@@ -41,3 +43,34 @@ def enviar_recuperacion_clave(email: str) -> dict:
     payload = {"requestType": "PASSWORD_RESET", "email": email}
     response = requests.post(url, json=payload, timeout=10)
     return response.json()
+
+def guardar_historial_limpieza(email: str, num_archivos: int, stats: dict):
+    """Guarda un registro automático de la limpieza en Firestore."""
+    try:
+        doc_ref = db.collection("historial_limpiezas").document()
+        doc_ref.set({
+            "email": email,
+            "fecha": datetime.now(UTC).isoformat(),
+            "num_archivos": num_archivos,
+            "filas_originales": stats.get("originales", 0),
+            "duplicados_eliminados": stats.get("duplicados", 0),
+            "vacias_eliminadas": stats.get("vacias", 0),
+            "basura_eliminada": stats.get("basura", 0)
+        })
+    except Exception as e: # noqa: BLE001
+        print(f"Error guardando historial en Firestore: {e}")
+
+def obtener_historial_usuario(email: str) -> list:
+    """Recupera el historial de limpiezas recientes del usuario desde Firestore."""
+    try:
+        docs = db.collection("historial_limpiezas")\
+                 .where("email", "==", email)\
+                 .stream()
+        
+        historial = [doc.to_dict() for doc in docs]
+        # Ordenar de más reciente a más antiguo en memoria (evita requerir índices compuestos en Firebase)
+        historial.sort(key=lambda x: x.get("fecha", ""), reverse=True)
+        return historial[:10] # Retorna los últimos 10 registros
+    except Exception as e: # noqa: BLE001
+        print(f"Error obteniendo historial: {e}")
+        return []

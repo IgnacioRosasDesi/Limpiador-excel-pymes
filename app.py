@@ -1,16 +1,19 @@
 # 1. Imports nativos
 import zipfile
+from datetime import datetime
 from io import BytesIO
 
 # 2. Imports de terceros
 import pandas as pd
 import streamlit as st
 
-# Importamos las funciones de Firebase
+# Importamos las funciones de Firebase (incluyendo el historial)
 from auth_db import (
     enviar_correo_verificacion,
     enviar_recuperacion_clave,
+    guardar_historial_limpieza,
     iniciar_sesion,
+    obtener_historial_usuario,
     registrar_usuario,
 )
 
@@ -52,7 +55,6 @@ if 'mostrar_login' not in st.session_state:
 # =========================================================
 if not st.session_state['usuario_autenticado']:
     
-    # Si el usuario hizo clic en "Ir al Sistema / Login"
     if st.session_state['mostrar_login']:
         if st.button("← Volver a la presentación"):
             st.session_state['mostrar_login'] = False
@@ -125,7 +127,6 @@ if not st.session_state['usuario_autenticado']:
                 else:
                     st.warning("Completa todos los campos.")
                     
-    # Si estamos en la Landing Page Pública
     else:
         col_top1, col_top2 = st.columns([4, 2])
         with col_top2:
@@ -191,6 +192,24 @@ else:
         st.markdown("<h1 style='margin-bottom: 0px;'>RowRescue</h1>", unsafe_allow_html=True)
 
     st.markdown("<p style='color: #94a3b8; font-size: 1.1rem;'>Plataforma inteligente de estandarización y limpieza de bases de datos.</p>", unsafe_allow_html=True)
+    st.divider()
+
+    # --- SECCIÓN DE HISTORIAL RECIENTE (FIRESTORE) ---
+    with st.expander("📜 Ver mi historial de actividad reciente"):
+        historial_usuario = obtener_historial_usuario(st.session_state['usuario_email'])
+        if historial_usuario:
+            for h in historial_usuario:
+                # Formatear fecha legible
+                try:
+                    dt = datetime.fromisoformat(h.get("fecha", ""))
+                    fecha_str = dt.strftime("%d-%m-%Y %H:%M")
+                except Exception: # noqa: BLE001
+                    fecha_str = "Reciente"
+                
+                st.markdown(f"- **{fecha_str}** — 📁 {h.get('num_archivos', 1)} archivo(s) procesados | 🗑️ {h.get('duplicados_eliminados', 0) + h.get('vacias_eliminadas', 0) + h.get('basura_eliminada', 0)} elementos eliminados en total.")
+        else:
+            st.info("Aún no tienes registros de limpiezas pasadas. ¡Sube tu primer archivo abajo!")
+
     st.divider()
 
     # --- LÓGICA PRINCIPAL DE LIMPIEZA MÚLTIPLE ---
@@ -259,7 +278,16 @@ else:
                             nombre_archivo_limpio = f"limpio_{archivo.name.rsplit('.', 1)[0]}.xlsx"
                             zip_file.writestr(nombre_archivo_limpio, excel_buffer.getvalue())
                     
-                    st.success("¡Todos los archivos procesados con éxito!")
+                    # --- GUARDAR EN FIRESTORE EL HISTORIAL ---
+                    stats_globales = {
+                        "originales": total_originales,
+                        "duplicados": total_duplicados,
+                        "vacias": total_vacias,
+                        "basura": total_basura
+                    }
+                    guardar_historial_limpieza(st.session_state['usuario_email'], len(archivos_subidos), stats_globales)
+                    
+                    st.success("¡Todos los archivos procesados con éxito y guardados en tu historial!")
                     
                     st.subheader("📊 Resumen de Limpieza Masiva")
                     col1, col2, col3, col4 = st.columns(4)
