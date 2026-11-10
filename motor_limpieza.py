@@ -26,33 +26,35 @@ def estandarizar_rut(serie_rut: pd.Series) -> pd.Series:
     return resultado
 
 
-def leer_archivo(ruta_o_buffer) -> pd.DataFrame:
-    """Lee el archivo crudo manejando fallos comunes de encoding."""
-    nombre_archivo = getattr(ruta_o_buffer, 'name', str(ruta_o_buffer))
-    logger.info(f"=== Leyendo archivo crudo: {nombre_archivo} ===")
+import pandas as pd
 
+
+def leer_archivo(archivo):
+    """
+    Lee el archivo forzando todos los datos a formato texto (str).
+    Esto previene colapsos de memoria y corrupción de datos (ej. pérdida de ceros a la izquierda).
+    """
+    nombre = archivo.name.lower()
+    
     try:
-        if nombre_archivo.lower().endswith('.csv'):
-            try:
-                df = pd.read_csv(ruta_o_buffer, encoding='utf-8')
-            except UnicodeDecodeError:
-                if hasattr(ruta_o_buffer, 'seek'):
-                    ruta_o_buffer.seek(0)
-                df = pd.read_csv(ruta_o_buffer, encoding='latin1', sep=None, engine='python')
-        elif nombre_archivo.lower().endswith(('.xls', '.xlsx')):
-            df = pd.read_excel(ruta_o_buffer)
+        if nombre.endswith('.csv'):
+            # keep_default_na=False evita que detecte celdas vacías como valores flotantes (NaN)
+            df = pd.read_csv(archivo, dtype=str, keep_default_na=False)
+        
+        elif nombre.endswith(('.xls', '.xlsx')):
+            # En Excel forzamos el tipo texto y luego reemplazamos los vacíos
+            df = pd.read_excel(archivo, dtype=str)
+            df.fillna("", inplace=True)
+            
         else:
-            raise ValueError("Formato no soportado.")
-
-        if df.empty:
-            raise ValueError("El archivo está completamente vacío.")
-
+            raise ValueError("Formato de archivo no soportado. Por favor, sube un .xlsx o .csv")
+            
         return df
-
-    except Exception as e:
-        logger.exception("Error al leer el archivo.")
-        raise ValueError(f"No se pudo leer el archivo: {e!s}") from e
-
+        
+    except Exception as e:  
+        # Capturamos cualquier error (archivo corrupto, encriptado, etc.) 
+        # y lanzamos un RuntimeError limpio que app.py atrapará y mostrará en amarillo.
+        raise RuntimeError(f"No se pudo leer el archivo '{archivo.name}'. Asegúrate de que no esté corrupto o protegido con contraseña. (Detalle técnico: {e!s})") from e
 
 def limpiar_dataframe(df: pd.DataFrame, columna_duplicados: str | None = None, valor_basura: str | None = None) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Limpia el DataFrame, elimina duplicados inteligentemente y filtra valores basura."""
