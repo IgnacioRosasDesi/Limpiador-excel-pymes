@@ -216,194 +216,212 @@ else:
     st.divider()
 
     # --- LÓGICA PRINCIPAL DE LIMPIEZA MÚLTIPLE ---
+# --- LÓGICA PRINCIPAL DE LIMPIEZA MÚLTIPLE ---
     archivos_subidos = st.file_uploader(
         "Arrastra uno o múltiples archivos aquí (.xlsx, .csv)", 
         type=["xlsx", "xls", "csv"],
         accept_multiple_files=True,
-        help="💡 Puedes subir varios archivos a la vez. El sistema los procesará todos y te entregará un archivo ZIP."
+        help="💡 Puedes subir varios archivos a la vez (Máximo 50 MB por archivo)."
     )
 
     if archivos_subidos:
-        try:
-            df_ejemplo = leer_archivo(archivos_subidos[0])
-            
-            # --- CARGAR PRESETS GUARDADOS ---
-            presets_disponibles = obtener_presets_usuario(st.session_state['usuario_email'])
-            nombres_presets = ["-- Personalizado (Sin preset) --"] + [p["nombre_preset"] for p in presets_disponibles]
-            
-            st.subheader("⚙️ Opciones de Limpieza Masiva")
-            
-            preset_seleccionado = st.selectbox("📂 Cargar Preset Guardado", nombres_presets)
-            
-            # Valores por defecto según preset seleccionado
-            def_columna = "Fila exacta (Todas las columnas)"
-            def_texto = ""
-            
-            if preset_seleccionado != "-- Personalizado (Sin preset) --":
-                for p in presets_disponibles:
-                    if p["nombre_preset"] == preset_seleccionado:
-                        def_columna = p["columna"]
-                        def_texto = p["texto_basura"]
-                st.info(f"✨ Preset '{preset_seleccionado}' cargado correctamente.")
+        # Límite de tamaño seguro en Bytes (50 Megabytes)
+        LIMITE_TAMANO_MB = 50
+        LIMITE_BYTES = LIMITE_TAMANO_MB * 1024 * 1024
+        
+        # Validar si algún archivo supera el límite permitido
+        archivos_validos = []
+        demasiado_pesados = []
+        
+        for archivo in archivos_subidos:
+            if archivo.size > LIMITE_BYTES:
+                demasiado_pesados.append(archivo.name)
+            else:
+                archivos_validos.append(archivo)
+                
+        if demasiado_pesados:
+            st.error(f"❌ Los siguientes archivos superan el límite de {LIMITE_TAMANO_MB}MB permitidos: {', '.join(demasiado_pesados)}. Por favor, sube archivos más livianos para proteger la memoria del sistema.")
+        
+        if archivos_validos:
+            if demasiado_pesados:
+                st.info("ℹ️ Procesando únicamente los archivos que cumplen con el límite de tamaño.")
+                
+            try:
+                df_ejemplo = leer_archivo(archivos_validos[0])
+                
+                # --- CARGAR PRESETS GUARDADOS ---
+                presets_disponibles = obtener_presets_usuario(st.session_state['usuario_email'])
+                nombres_presets = ["-- Personalizado (Sin preset) --"] + [p["nombre_preset"] for p in presets_disponibles]
+                
+                st.subheader("⚙️ Opciones de Limpieza Masiva")
+                
+                preset_seleccionado = st.selectbox("📂 Cargar Preset Guardado", nombres_presets)
+                
+                # Valores por defecto según preset seleccionado
+                def_columna = "Fila exacta (Todas las columnas)"
+                def_texto = ""
+                
+                if preset_seleccionado != "-- Personalizado (Sin preset) --":
+                    for p in presets_disponibles:
+                        if p["nombre_preset"] == preset_seleccionado:
+                            def_columna = p["columna"]
+                            def_texto = p["texto_basura"]
+                    st.info(f"✨ Preset '{preset_seleccionado}' cargado correctamente.")
 
-            opciones_dup = ["Fila exacta (Todas las columnas)"] + list(df_ejemplo.columns)
-            
-            # Manejar índice por defecto del selectbox
-            index_col = 0
-            if def_columna in opciones_dup:
-                index_col = opciones_dup.index(def_columna)
+                opciones_dup = ["Fila exacta (Todas las columnas)"] + list(df_ejemplo.columns)
                 
-            columna_seleccionada = st.selectbox(
-                "Identificar registros duplicados basándose en:",
-                opciones_dup,
-                index=index_col
-            )
-            
-            st.markdown("### 🔍 Filtro de Datos Específicos")
-            valor_buscado = st.text_input(
-                "¿Hay alguna palabra o dato que desees borrar de tu base de datos? (Ej: 'Prueba', 'Cancelado')", 
-                value=def_texto,
-                placeholder="Escribe aquí para buscar..."
-            )
-            
-            # --- GESTIÓN DE GUARDAR / ELIMINAR PRESET ---
-            with st.expander("💾 Guardar o gestionar esta configuración como Preset"):
-                nuevo_nombre_preset = st.text_input("Nombre para este preset (Ej: 'Limpieza Clientes Mensual')")
-                col_btn_save, col_btn_del = st.columns(2)
+                index_col = 0
+                if def_columna in opciones_dup:
+                    index_col = opciones_dup.index(def_columna)
+                    
+                columna_seleccionada = st.selectbox(
+                    "Identificar registros duplicados basándose en:",
+                    opciones_dup,
+                    index=index_col
+                )
                 
-                with col_btn_save:
-                    if st.button("Guardar Configuración"):
-                        if nuevo_nombre_preset:
-                            ok = guardar_preset_usuario(
-                                st.session_state['usuario_email'], 
-                                nuevo_nombre_preset, 
-                                columna_seleccionada, 
-                                valor_buscado
-                            )
-                            if ok:
-                                st.success(f"Preset '{nuevo_nombre_preset}' guardado con éxito.")
-                                st.rerun()
+                st.markdown("### 🔍 Filtro de Datos Específicos")
+                valor_buscado = st.text_input(
+                    "¿Hay alguna palabra o dato que desees borrar de tu base de datos? (Ej: 'Prueba', 'Cancelado')", 
+                    value=def_texto,
+                    placeholder="Escribe aquí para buscar..."
+                )
+                
+                with st.expander("💾 Guardar o gestionar esta configuración como Preset"):
+                    nuevo_nombre_preset = st.text_input("Nombre para este preset (Ej: 'Limpieza Clientes Mensual')")
+                    col_btn_save, col_btn_del = st.columns(2)
+                    
+                    with col_btn_save:
+                        if st.button("Guardar Configuración"):
+                            if nuevo_nombre_preset:
+                                ok = guardar_preset_usuario(
+                                    st.session_state['usuario_email'], 
+                                    nuevo_nombre_preset, 
+                                    columna_seleccionada, 
+                                    valor_buscado
+                                )
+                                if ok:
+                                    st.success(f"Preset '{nuevo_nombre_preset}' guardado con éxito.")
+                                    st.rerun()
+                                else:
+                                    st.error("Error al guardar el preset.")
                             else:
-                                st.error("Error al guardar el preset.")
-                        else:
-                            st.warning("Ingresa un nombre para el preset.")
-                            
-                with col_btn_del:
-                    if presets_disponibles and preset_seleccionado != "-- Personalizado (Sin preset) --"and st.button("🗑️ Borrar preset actual"):
+                                st.warning("Ingresa un nombre para el preset.")
+                                
+                    with col_btn_del:
+                        if presets_disponibles and preset_seleccionado != "-- Personalizado (Sin preset) --" and st.button("🗑️ Borrar preset actual"):
                             eliminar_preset_usuario(st.session_state['usuario_email'], preset_seleccionado)
                             st.success("Preset eliminado.")
                             st.rerun()
 
-            confirmar_basura = False
-            if valor_buscado:
-                 confirmar_basura = st.checkbox(
-                        f"🚨 Confirmo que deseo ELIMINAR todas las filas que contengan '{valor_buscado}' en TODOS mis archivos.",
-                        help="Atención: Esta eliminación ocurrirá en todos los documentos que hayas subido."
-                    )
-            
-            st.divider()
+                confirmar_basura = False
+                if valor_buscado:
+                     confirmar_basura = st.checkbox(
+                            f"🚨 Confirmo que deseo ELIMINAR todas las filas que contengan '{valor_buscado}' en TODOS mis archivos.",
+                            help="Atención: Esta eliminación ocurrirá en todos los documentos que hayas subido."
+                        )
+                
+                st.divider()
 
-            if st.button("✨ Procesar Archivos", type="primary", use_container_width=True):
-                with st.spinner(f"Limpiando {len(archivos_subidos)} archivo(s)... esto puede tomar un momento."):
-                    
-                    clave = None if columna_seleccionada == "Fila exacta (Todas las columnas)" else columna_seleccionada
-                    texto_a_borrar = valor_buscado if confirmar_basura else None
-                    
-                    zip_buffer = BytesIO()
-                    
-                    total_originales = 0
-                    total_duplicados = 0
-                    total_vacias = 0
-                    total_basura = 0
-                    
-                    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-                        for archivo in archivos_subidos:
-                            df_raw = leer_archivo(archivo)
-                            df_limpio, stats = limpiar_dataframe(df_raw, columna_duplicados=clave, valor_basura=texto_a_borrar)
-                            
-                            total_originales += stats['filas_originales']
-                            total_duplicados += stats['duplicados_eliminados']
-                            total_vacias += stats['filas_vacias_eliminadas']
-                            total_basura += stats['filas_basura_eliminadas']
-                            
-                            excel_buffer = BytesIO()
-                            with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-                                df_limpio.to_excel(writer, index=False, sheet_name='Limpio')
-                            
-                            nombre_archivo_limpio = f"limpio_{archivo.name.rsplit('.', 1)[0]}.xlsx"
-                            zip_file.writestr(nombre_archivo_limpio, excel_buffer.getvalue())
-                    
-                    # Guardar historial en Firestore
-                    stats_globales = {
-                        "originales": total_originales,
-                        "duplicados": total_duplicados,
-                        "vacias": total_vacias,
-                        "basura": total_basura
-                    }
-                    guardar_historial_limpieza(st.session_state['usuario_email'], len(archivos_subidos), stats_globales)
-                    
-                    st.success("¡Todos los archivos procesados con éxito y guardados en tu historial!")
-                    
-                    st.subheader("📊 Resumen de Limpieza Masiva")
-                    col1, col2, col3, col4 = st.columns(4)
-                    col1.metric("Archivos", len(archivos_subidos))
-                    col2.metric("Total Duplicados", f"-{total_duplicados}")
-                    col3.metric("Total Vacías", f"-{total_vacias}")
-                    col4.metric("Total Filtradas", f"-{total_basura}")
-                    
-                    # Gráficos de impacto
-                    st.markdown("### 📈 Impacto Visual")
-                    total_eliminadas = total_duplicados + total_vacias + total_basura
-                    total_limpias = total_originales - total_eliminadas
-                    
-                    col_chart1, col_chart2 = st.columns(2)
-                    
-                    with col_chart1:
-                        st.caption("Proporción de Datos (Conservados vs Eliminados)")
-                        df_resumen = pd.DataFrame({
-                            "Estado": ["Conservados", "Eliminados"],
-                            "Cantidad": [total_limpias, total_eliminadas]
-                        }).set_index("Estado")
-                        st.bar_chart(df_resumen, color="#3b82f6")
+                if st.button("✨ Procesar Archivos", type="primary", use_container_width=True):
+                    with st.spinner(f"Limpiando {len(archivos_validos)} archivo(s)... esto puede tomar un momento."):
                         
-                    with col_chart2:
-                        st.caption("Detalle de Basura Eliminada")
-                        df_detalle = pd.DataFrame({
-                            "Motivo": ["Duplicados", "Vacías", "Filtro"],
-                            "Cantidad": [total_duplicados, total_vacias, total_basura]
-                        }).set_index("Motivo")
-                        st.bar_chart(df_detalle, color="#ef4444")
-
-                    pdf_bytes = generar_reporte_pdf(
-                        st.session_state['usuario_email'],
-                        len(archivos_subidos),
-                        stats_globales
-                    )
-
-                    st.divider()
-                    col_dl1, col_dl2 = st.columns(2)
-
-                    with col_dl1:
-                        st.download_button(
-                            label="⬇️ Descargar Resultados (.ZIP)",
-                            data=zip_buffer.getvalue(),
-                            file_name="RowRescue_Limpieza_Masiva.zip",
-                            mime="application/zip",
-                            type="secondary",
-                            use_container_width=True,
+                        clave = None if columna_seleccionada == "Fila exacta (Todas las columnas)" else columna_seleccionada
+                        texto_a_borrar = valor_buscado if confirmar_basura else None
+                        
+                        zip_buffer = BytesIO()
+                        
+                        total_originales = 0
+                        total_duplicados = 0
+                        total_vacias = 0
+                        total_basura = 0
+                        
+                        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+                            for archivo in archivos_validos:
+                                df_raw = leer_archivo(archivo)
+                                df_limpio, stats = limpiar_dataframe(df_raw, columna_duplicados=clave, valor_basura=texto_a_borrar)
+                                
+                                total_originales += stats['filas_originales']
+                                total_duplicados += stats['duplicados_eliminados']
+                                total_vacias += stats['filas_vacias_eliminadas']
+                                total_basura += stats['filas_basura_eliminadas']
+                                
+                                excel_buffer = BytesIO()
+                                with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                                    df_limpio.to_excel(writer, index=False, sheet_name='Limpio')
+                                
+                                nombre_archivo_limpio = f"limpio_{archivo.name.rsplit('.', 1)[0]}.xlsx"
+                                zip_file.writestr(nombre_archivo_limpio, excel_buffer.getvalue())
+                        
+                        stats_globales = {
+                            "originales": total_originales,
+                            "duplicados": total_duplicados,
+                            "vacias": total_vacias,
+                            "basura": total_basura
+                        }
+                        guardar_historial_limpieza(st.session_state['usuario_email'], len(archivos_validos), stats_globales)
+                        
+                        st.success("¡Todos los archivos procesados con éxito y guardados en tu historial!")
+                        
+                        st.subheader("📊 Resumen de Limpieza Masiva")
+                        col1, col2, col3, col4 = st.columns(4)
+                        col1.metric("Archivos", len(archivos_validos))
+                        col2.metric("Total Duplicados", f"-{total_duplicados}")
+                        col3.metric("Total Vacías", f"-{total_vacias}")
+                        col4.metric("Total Filtradas", f"-{total_basura}")
+                        
+                        st.markdown("### 📈 Impacto Visual")
+                        total_eliminadas = total_duplicados + total_vacias + total_basura
+                        total_limpias = total_originales - total_eliminadas
+                        
+                        col_chart1, col_chart2 = st.columns(2)
+                        
+                        with col_chart1:
+                            st.caption("Proporción de Datos (Conservados vs Eliminados)")
+                            df_resumen = pd.DataFrame({
+                                "Estado": ["Conservados", "Eliminados"],
+                                "Cantidad": [total_limpias, total_eliminadas]
+                            }).set_index("Estado")
+                            st.bar_chart(df_resumen, color="#3b82f6")
+                            
+                        with col_chart2:
+                            st.caption("Detalle de Basura Eliminada")
+                            df_detalle = pd.DataFrame({
+                                "Motivo": ["Duplicados", "Vacías", "Filtro"],
+                                "Cantidad": [total_duplicados, total_vacias, total_basura]
+                            }).set_index("Motivo")
+                            st.bar_chart(df_detalle, color="#ef4444")
+                        
+                        pdf_bytes = generar_reporte_pdf(
+                            st.session_state['usuario_email'], 
+                            len(archivos_validos), 
+                            stats_globales
                         )
-
-                    with col_dl2:
-                        st.download_button(
-                            label="📄 Descargar Certificado PDF",
-                            data=pdf_bytes,
-                            file_name="Reporte_Impacto_RowRescue.pdf",
-                            mime="application/pdf",
-                            type="primary",
-                            use_container_width=True,
-                        )
-                    
-        except (ValueError, RuntimeError) as e:
-            st.warning(f"Aviso sobre tus datos: {e!s}")
-        except Exception as e:  # noqa: BLE001
-            st.error(f"Error procesando los archivos: {e!s}")
+                        
+                        st.divider()
+                        col_dl1, col_dl2 = st.columns(2)
+                        
+                        with col_dl1:
+                            st.download_button(
+                                label="⬇️ Descargar Resultados (.ZIP)",
+                                data=zip_buffer.getvalue(),
+                                file_name="RowRescue_Limpieza_Masiva.zip",
+                                mime="application/zip",
+                                type="secondary",
+                                use_container_width=True,
+                            )
+                        
+                        with col_dl2:
+                            st.download_button(
+                                label="📄 Descargar Certificado PDF",
+                                data=pdf_bytes,
+                                file_name="Reporte_Impacto_RowRescue.pdf",
+                                mime="application/pdf",
+                                type="primary",
+                                use_container_width=True,
+                            )
+                        
+            except (ValueError, RuntimeError) as e:
+                st.warning(f"Aviso sobre tus datos: {e!s}")
+            except Exception as e:  # noqa: BLE001
+                st.error(f"Error procesando los archivos: {e!s}")
