@@ -4,3 +4,4 @@ openpyxl
 firebase-admin
 requests
 fpdf2
+mercadopago

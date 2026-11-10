@@ -115,3 +115,28 @@ def eliminar_preset_usuario(email: str, nombre_preset: str):
     except Exception as e:  # noqa: BLE001
         print(f"Error eliminando preset: {e}")
         return False
+
+def obtener_perfil_usuario(email: str) -> dict:
+    """Obtiene el plan actual del usuario. Si es nuevo, lo crea como 'free'."""
+    try:
+        doc_ref = db.collection("usuarios_perfiles").document(email)
+        doc = doc_ref.get()
+        if doc.exists:
+            return doc.to_dict()
+        else:
+            # Si no existe en la BD, lo inicializamos como free
+            perfil_base = {"email": email, "plan": "free", "fecha_registro": datetime.now(UTC).isoformat()}
+            doc_ref.set(perfil_base)
+            return perfil_base
+    except Exception as e: # noqa: BLE001
+        print(f"Error obteniendo perfil: {e}")
+        return {"email": email, "plan": "free"}
+
+def actualizar_plan_usuario(email: str, nuevo_plan: str):
+    """Actualiza el plan del usuario (ej. de 'free' a 'premium')."""
+    try:
+        db.collection("usuarios_perfiles").document(email).update({"plan": nuevo_plan})
+        return True
+    except Exception as e: # noqa: BLE001
+        print(f"Error actualizando plan: {e}")
+        return False

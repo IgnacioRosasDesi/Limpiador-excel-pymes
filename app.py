@@ -9,6 +9,8 @@ import streamlit as st
 
 # Importamos todas las funciones de Firebase (Auth, Firestore Historial y Presets)
 from auth_db import (
+    actualizar_plan_usuario,
+    # ... (tus otros imports de auth_db)
     eliminar_preset_usuario,
     enviar_correo_verificacion,
     enviar_recuperacion_clave,
@@ -16,6 +18,7 @@ from auth_db import (
     guardar_preset_usuario,
     iniciar_sesion,
     obtener_historial_usuario,
+    obtener_perfil_usuario,
     obtener_presets_usuario,
     registrar_usuario,
 )
@@ -23,6 +26,7 @@ from generador_pdf import generar_reporte_pdf
 
 # 3. Imports locales
 from motor_limpieza import leer_archivo, limpiar_dataframe
+from pagos import generar_link_mercadopago
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -198,6 +202,36 @@ else:
     st.markdown("<p style='color: #94a3b8; font-size: 1.1rem;'>Plataforma inteligente de estandarización y limpieza de bases de datos.</p>", unsafe_allow_html=True)
     st.divider()
 
+    # --- VERIFICACIÓN DE PAGOS DESDE MERCADO PAGO ---
+    # Si Mercado Pago redirige de vuelta con éxito, la URL tendrá ?pago=exitoso
+    query_params = st.query_params
+    if query_params.get("pago") == "exitoso":
+        # ¡El usuario acaba de pagar! Lo ascendemos a Premium en Firestore
+        actualizar_plan_usuario(st.session_state['usuario_email'], "premium")
+        st.success("🎉 ¡Pago confirmado! Bienvenido a RowRescue Premium. Disfruta de limpieza masiva sin límites.")
+        # Limpiamos la URL para que no vuelva a procesarse al recargar
+        st.query_params.clear()
+
+    # --- OBTENER PERFIL Y PLAN DEL USUARIO ---
+    perfil = obtener_perfil_usuario(st.session_state['usuario_email'])
+    plan_actual = perfil.get("plan", "free")
+
+    if plan_actual == "free":
+        st.info("💡 **Plan Gratuito Activo:** Puedes procesar 1 archivo a la vez.")
+        
+        with st.expander("⭐ Actualizar a Premium ($5.000 CLP / de por vida)"):
+            st.write("Desbloquea procesamiento masivo ilimitado para múltiples archivos simultáneos.")
+            # Para Streamlit Cloud, la URL base es la de tu app. En local es localhost:8501
+            url_base = "https://rowrescue.streamlit.app/" 
+            link_pago = generar_link_mercadopago(st.session_state['usuario_email'], url_base)
+            
+            if link_pago:
+                st.link_button("💳 Pagar de forma segura con Mercado Pago", link_pago, type="primary")
+            else:
+                st.error("El sistema de pagos se está configurando. Vuelve más tarde.")
+    else:
+        st.success("⭐ **Plan Premium Activo:** Procesamiento masivo ilimitado desbloqueado.")
+
     # --- SECCIÓN DE HISTORIAL RECIENTE (FIRESTORE) ---
     with st.expander("📜 Ver mi historial de actividad reciente"):
         historial_usuario = obtener_historial_usuario(st.session_state['usuario_email'])
@@ -223,6 +257,11 @@ else:
         accept_multiple_files=True,
         help="💡 Puedes subir varios archivos a la vez (Máximo 50 MB por archivo)."
     )
+
+    # --- RESTRICCIÓN FREEMIUM ---
+    if archivos_subidos and plan_actual == "free" and len(archivos_subidos) > 1:
+        st.error("🔒 **Límite del Plan Gratuito excedido.** Solo puedes procesar 1 archivo a la vez. Actualiza a Premium para procesar múltiples archivos simultáneamente.")
+        st.stop() # Detiene la ejecución para que no limpie los archivos
 
     if archivos_subidos:
         # Límite de tamaño seguro en Bytes (50 Megabytes)
