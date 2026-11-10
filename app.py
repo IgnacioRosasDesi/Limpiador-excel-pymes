@@ -19,6 +19,7 @@ from auth_db import (
     obtener_presets_usuario,
     registrar_usuario,
 )
+from generador_pdf import generar_reporte_pdf
 
 # 3. Imports locales
 from motor_limpieza import leer_archivo, limpiar_dataframe
@@ -372,6 +373,35 @@ else:
                             "Cantidad": [total_duplicados, total_vacias, total_basura]
                         }).set_index("Motivo")
                         st.bar_chart(df_detalle, color="#ef4444")
+
+                    pdf_bytes = generar_reporte_pdf(
+                        st.session_state['usuario_email'],
+                        len(archivos_subidos),
+                        stats_globales
+                    )
+
+                    st.divider()
+                    col_dl1, col_dl2 = st.columns(2)
+
+                    with col_dl1:
+                        st.download_button(
+                            label="⬇️ Descargar Resultados (.ZIP)",
+                            data=zip_buffer.getvalue(),
+                            file_name="RowRescue_Limpieza_Masiva.zip",
+                            mime="application/zip",
+                            type="secondary",
+                            use_container_width=True,
+                        )
+
+                    with col_dl2:
+                        st.download_button(
+                            label="📄 Descargar Certificado PDF",
+                            data=pdf_bytes,
+                            file_name="Reporte_Impacto_RowRescue.pdf",
+                            mime="application/pdf",
+                            type="primary",
+                            use_container_width=True,
+                        )
                     
                     st.download_button(
                         label=f"⬇️ Descargar Resultados ({len(archivos_subidos)} archivos en .ZIP)",
