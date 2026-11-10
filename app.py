@@ -403,15 +403,6 @@ else:
                             use_container_width=True,
                         )
                     
-                    st.download_button(
-                        label=f"⬇️ Descargar Resultados ({len(archivos_subidos)} archivos en .ZIP)",
-                        data=zip_buffer.getvalue(),
-                        file_name="RowRescue_Limpieza_Masiva.zip",
-                        mime="application/zip",
-                        type="secondary",
-                        use_container_width=True,
-                    )
-                    
         except (ValueError, RuntimeError) as e:
             st.warning(f"Aviso sobre tus datos: {e!s}")
         except Exception as e:  # noqa: BLE001
