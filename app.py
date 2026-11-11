@@ -37,11 +37,8 @@ st.set_page_config(
     layout="centered"
 )
 # --- GESTOR DE COOKIES ---
-@st.cache_resource
-def get_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_manager()
+# Inicializamos el gestor de cookies de forma directa sin caché
+cookie_manager = stx.CookieManager()
 
 # --- INYECCIÓN DE CSS PARA BRANDING ---
 estilo_oculto = """
