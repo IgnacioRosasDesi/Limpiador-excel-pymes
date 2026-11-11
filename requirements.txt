@@ -5,3 +5,4 @@ firebase-admin
 requests
 fpdf2
 mercadopago
+extra-streamlit-components

@@ -3,6 +3,8 @@ import zipfile
 from datetime import datetime
 from io import BytesIO
 
+import extra_streamlit_components as stx
+
 # 2. Imports de terceros
 import pandas as pd
 import streamlit as st
@@ -34,6 +36,12 @@ st.set_page_config(
     page_icon="⚡", 
     layout="centered"
 )
+# --- GESTOR DE COOKIES ---
+@st.cache_resource
+def get_manager():
+    return stx.CookieManager()
+
+cookie_manager = get_manager()
 
 # --- INYECCIÓN DE CSS PARA BRANDING ---
 estilo_oculto = """
@@ -50,13 +58,30 @@ estilo_oculto = """
 """
 st.markdown(estilo_oculto, unsafe_allow_html=True)
 
-# --- INICIALIZAR ESTADO DE SESIÓN ---
+## --- INICIALIZAR ESTADO DE SESIÓN CON COOKIES ---
 if 'usuario_autenticado' not in st.session_state:
-    st.session_state['usuario_autenticado'] = False
+    # Intentamos leer si hay una cookie de sesión activa previa
+    email_cookie = cookie_manager.get(cookie="rowrescue_user")
+    if email_cookie:
+        st.session_state['usuario_autenticado'] = True
+        st.session_state['usuario_email'] = email_cookie
+    else:
+        st.session_state['usuario_autenticado'] = False
+
 if 'usuario_email' not in st.session_state:
     st.session_state['usuario_email'] = ""
 if 'mostrar_login' not in st.session_state:
     st.session_state['mostrar_login'] = False
+
+# --- BANNER DE CONSENTIMIENTO DE COOKIES ---
+consentimiento_cookie = cookie_manager.get(cookie="rowrescue_consent")
+if not consentimiento_cookie:
+    st.info("🍪 **Aviso de Privacidad y Cookies:** En RowRescue utilizamos cookies técnicas y de sesión para garantizar el correcto funcionamiento de la plataforma y recordar tus credenciales de acceso. Al continuar navegando, aceptas nuestra política de uso de datos.")
+    col_c1, col_c2 = st.columns([1, 5])
+    with col_c1:
+        if st.button("Aceptar Cookies", type="primary"):
+            cookie_manager.set("rowrescue_consent", "aceptado", expires_at=datetime.now().replace(year=datetime.now().year + 1))
+            st.rerun()
 
 # --- BANNERS B2B / PATROCINIO CORPORATIVO (PUBLICIDAD NO INTRUSIVA) ---
     st.sidebar.divider()
@@ -103,6 +128,8 @@ if not st.session_state['usuario_autenticado']:
                         else:
                             st.session_state['usuario_autenticado'] = True
                             st.session_state['usuario_email'] = res['email']
+
+                            cookie_manager.set("rowrescue_user", res['email'], max_age=30*24*60*60)
                             st.rerun() 
                 else:
                     st.warning("Por favor ingresa tu correo y contraseña.")
@@ -201,6 +228,8 @@ else:
         st.markdown(f"<div style='text-align: right; padding-top: 8px; color: #94a3b8;'>👤 {st.session_state['usuario_email']}</div>", unsafe_allow_html=True)
     with col_logout:
         if st.button("Cerrar Sesión", use_container_width=True):
+            cookie_manager.delete("rowrescue:user")
+
             st.session_state['usuario_autenticado'] = False
             st.session_state['usuario_email'] = ""
             st.session_state['mostrar_login'] = False
