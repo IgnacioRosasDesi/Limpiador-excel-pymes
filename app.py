@@ -71,14 +71,25 @@ if 'mostrar_login' not in st.session_state:
     st.session_state['mostrar_login'] = False
 
 # --- BANNER DE CONSENTIMIENTO DE COOKIES ---
-consentimiento_cookie = cookie_manager.get(cookie="rowrescue_consent")
-if not consentimiento_cookie:
-    st.info("🍪 **Aviso de Privacidad y Cookies:** En RowRescue utilizamos cookies técnicas y de sesión para garantizar el correcto funcionamiento de la plataforma y recordar tus credenciales de acceso. Al continuar navegando, aceptas nuestra política de uso de datos.")
-    col_c1, col_c2 = st.columns([1, 5])
-    with col_c1:
+# Revisamos si ya las aceptó previamente
+if "cookies_aceptadas" not in st.session_state:
+    st.session_state["cookies_aceptadas"] = (cookie_manager.get(cookie="rowrescue_consent") == "aceptado")
+
+# Creamos un espacio dinámico que podemos "vaciar" más adelante
+espacio_banner = st.empty()
+
+# Si no las ha aceptado, llenamos ese espacio con el aviso
+if not st.session_state["cookies_aceptadas"]:
+    with espacio_banner.container():
+        st.info("🍪 **Aviso de Privacidad y Cookies:** En RowRescue utilizamos cookies técnicas y de sesión para garantizar el correcto funcionamiento de la plataforma y recordar tus credenciales de acceso. Al continuar navegando, aceptas nuestra política de uso de datos.")
+        
         if st.button("Aceptar Cookies", type="primary"):
-            cookie_manager.set("rowrescue_consent", "aceptado", expires_at=datetime.now().replace(year=datetime.now().year + 1))
-            st.rerun()
+            # 1. Mandamos a guardar la cookie por 1 año (31,536,000 segundos)
+            cookie_manager.set("rowrescue_consent", "aceptado", max_age=31536000)
+            # 2. Actualizamos la sesión
+            st.session_state["cookies_aceptadas"] = True
+            # 3. Vaciamos el contenedor al instante (desaparece visualmente sin reiniciar la app)
+            espacio_banner.empty()
 
 # --- BANNERS B2B / PATROCINIO CORPORATIVO (PUBLICIDAD NO INTRUSIVA) ---
     st.sidebar.divider()
