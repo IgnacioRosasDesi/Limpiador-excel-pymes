@@ -58,6 +58,22 @@ if 'usuario_email' not in st.session_state:
 if 'mostrar_login' not in st.session_state:
     st.session_state['mostrar_login'] = False
 
+# --- BANNERS B2B / PATROCINIO CORPORATIVO (PUBLICIDAD NO INTRUSIVA) ---
+    st.sidebar.divider()
+    st.sidebar.markdown("### 📢 Espacio Patrocinado B2B")
+    
+    # Diseño de tarjeta publicitaria discreta y profesional
+    st.sidebar.markdown(
+        """
+        <div style="background-color: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; font-size: 0.9rem;">
+            <p style="color: #38bdf8; font-weight: bold; margin-bottom: 4px;">🚀 Optimiza tu ERP o Contabilidad</p>
+            <p style="color: #94a3b8; margin-bottom: 8px;">Conecta RowRescue con tus sistemas mediante nuestra API de automatización de datos.</p>
+            <a href="https://github.com" target="_blank" style="color: #f8fafc; text-decoration: underline; font-size: 0.8rem;">Conocer alianzas B2B →</a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 # =========================================================
 # PANTALLA PÚBLICA / LANDING PAGE O LOGIN (SI NO ESTÁ AUTENTICADO)
 # =========================================================
