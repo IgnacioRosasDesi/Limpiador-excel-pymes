@@ -1,1 +1,5 @@
+firebase_credenciales.json
 firebase_key.json
+*.log
+venv/
+__pycache__/

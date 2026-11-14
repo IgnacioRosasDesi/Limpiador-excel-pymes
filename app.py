@@ -138,7 +138,7 @@ if not st.session_state['usuario_autenticado']:
                             st.session_state['usuario_email'] = res['email']
 
                             cookie_manager.set("rowrescue_user", res['email'], max_age=30*24*60*60)
-                            st.rerun() 
+
                 else:
                     st.warning("Por favor ingresa tu correo y contraseña.")
             
